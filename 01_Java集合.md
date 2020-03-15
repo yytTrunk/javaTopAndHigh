@@ -9,7 +9,7 @@
 - List 接口的实现类主要有：ArrayList、LinkedList、Stack 、Vector以及CopyOnWriteArrayList 等；
 - Queue接口的主要实现类有：ArrayDeque、ArrayBlockingQueue、LinkedBlockingQueue、PriorityQueue等；
 
-![ava集合](E:\tt文档\我的文档\ttGit\JavaInterview\img\01_01.png)
+![ava集合](.\img\01_01.png)
 
 ### 二 LIst
 
