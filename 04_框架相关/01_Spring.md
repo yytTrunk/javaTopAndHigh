@@ -158,19 +158,56 @@ Bean创建时序图
 
 ![Bean创建时序图](.\img\04_01_04.png)
 
-/////////////////////////////////////// TODO  需文字描述过程
+流程
 
-#### 1.8 Bean中的依赖关系是如何处理的？
+1. 调用getBean()获取IOC容器中Bean
+2. 通过Bean工厂（BeanFactory）调用getSingleton()方法，从Bean缓存singletonObjects（为一个ConcurrentHashMap）中尝试获取Bean（创建的单例Bean都会被缓存起来）
+
+获取过程中用到了双重校验来保证正确获取
+
+```java
+	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+		Object singletonObject = this.singletonObjects.get(beanName);
+		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+			synchronized (this.singletonObjects) {
+				singletonObject = this.earlySingletonObjects.get(beanName);
+				if (singletonObject == null && allowEarlyReference) {
+					ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+					if (singletonFactory != null) {
+						singletonObject = singletonFactory.getObject();
+						this.earlySingletonObjects.put(beanName, singletonObject);
+						this.singletonFactories.remove(beanName);
+					}
+				}
+			}
+		}
+		return singletonObject;
+	}
+```
+
+3. 若缓存中不存在，则会进行重新创建；若存在，返回Object
+4. 获取当前Bean是否存在依赖，若存在，先进行创建
+5. 需要判断参数scope为singleton还是Prototype，然后分别走不同分支，调用createBean()方法创建Bean
+6. 单例创建完后加入到缓存中，
+7. 最后通过反射创建Bean
 
 
 
+#### 1.8 Bean中的依赖关系是如何处理的？及如何处理循环依赖？
 
+循环依赖是指，对象A依赖于B，B依赖于C，C依赖于A，类似这样循环依赖。
+
+Spring在获取对象A时，通过提前曝光，会将A加入正在创建Bean的缓存中。在创建A过程中，发现依赖于，需要创建B，创建B时，又发现依赖于A，此时的A已经被提前曝光加入了正在创建的bean的缓存中，则无需创建新的的ClassA的实例，直接从缓存中获取即可。从而解决循环依赖问题。
+
+Spring只能解决Setter方法注入的单例bean之间的循环依赖
 
 #### 1.9 Bean工厂BeanFactory与上下文ApplicationContext区别？
 
 ![](.\img\04_01_05.png)
 
-ApplicationContext是由BeanFactory接口派生而来，提供了BeanFactory所有的功能。除此之外context包还提供了以下的功能：
+ApplicationContext接口是由BeanFactory接口派生而来，提供了BeanFactory所有的功能，同时还实现了很多接口，通过该接口能够调用实现了这些接口的类中方法，ClassPathXmlApplicationContext即为。
+
+ApplicationContext扩展了如下功能
 
 1. MessageSource, 提供国际化的消息访问
 2. 资源访问，如URL和文件
@@ -196,17 +233,42 @@ ApplicationContext是由BeanFactory接口派生而来，提供了BeanFactory所�
 
 
 
-
-
 #### 1.12 Spring中的Bean是单例的吗？如果是单例如何保证线程安全？
 
 默认是单例，可以通过scope进行配置。
 
 当单例Bean存在线程安全问题，对该对象中的非静态成员变量进行同时写操作会存在线程安全问题。
 
+#### 
 
 
-#### 1.12 如何处理循环依赖？
+
+### 二 Spring中事务管理
+
+#### 2.1	什么是事务？
+
+事务管理是指需要保证多线程并发环境下，对数据库的操作依然能够保证正确性。即需要保证数据库事务的四大特性ACID，原子性、一致性、隔离性和持久性
+
+- 原子性（atomicity）
+- 一致性
+- 隔离性
+- 持久性
+
+数据库中提供了四种隔离级别。
+
+Spring中的事务本质也是对数据库事务的支持，没有数据库事务的支持，Spring本身也难以提供事务功能。
+
+
+
+#### 2.2 Spring中事务？
+
+Spring中事务在数据库事务基础上进行了封装，并进行了扩展。
+
+1. 支持了原有数据库事务的隔离级别
+2. 加入了事务传播
+3. 提供了声明式事务
+
+
 
 
 
