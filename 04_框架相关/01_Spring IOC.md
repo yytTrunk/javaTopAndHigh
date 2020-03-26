@@ -241,13 +241,5 @@ ApplicationContext扩展了如下功能
 
 #### 
 
-
-
-### 三 谈谈对Spring的理解
-
-
-
-
-
 ### 参考
 
