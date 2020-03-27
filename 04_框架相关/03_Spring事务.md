@@ -25,4 +25,10 @@ Spring中事务在数据库事务基础上进行了封装，并进行了扩展�
 2. 加入了事务传播
 3. 提供了声明式事务
 
+
+
+
+
+
+
 https://docs.spring.io/spring-framework/docs/current/spring-framework-reference/core.html#aop-proxying)
