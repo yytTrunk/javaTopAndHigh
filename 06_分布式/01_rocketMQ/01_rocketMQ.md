@@ -20,7 +20,7 @@
 
 
 
-### 三 有哪些消息队列？有什么区别？
+## 三 有哪些消息队列？有什么区别？
 
 常见的消息中间件：Kafka、Rocketmq、ActiveMq、RabbitMQ
 
@@ -46,7 +46,38 @@ RocketMQ：
 
 ## 四 RocketMQ特点？
 
-经历过双十一，Java实现
+基于Java语言实现
+
+稳点无单点
+
+集群功能完善，经历过实战
+
+生态圈好，社区活跃
+
+
+
+## 五 RocketMQ技术架构？
+
+![RocketMQ技术架构](.\img\01_01.png)
+
+RocketMQ架构上主要分为四部分，如上图所示:
+
+- Producer：消息发布的角色，支持分布式集群方式部署。Producer通过MQ的负载均衡模块选择相应的Broker集群队列进行消息投递，投递的过程支持快速失败并且低延迟。
+- Consumer：消息消费的角色，支持分布式集群方式部署。支持以push推，pull拉两种模式对消息进行消费。同时也支持集群方式和广播方式的消费，它提供实时消息订阅机制，可以满足大多数用户的需求。
+- NameServer：NameServer是一个非常简单的Topic路由注册中心，其角色类似Dubbo中的zookeeper，支持Broker的动态注册与发现。主要包括两个功能：Broker管理，NameServer接受Broker集群的注册信息并且保存下来作为路由信息的基本数据。然后提供心跳检测机制，检查Broker是否还存活；路由信息管理，每个NameServer将保存关于Broker集群的整个路由信息和用于客户端查询的队列信息。然后Producer和Conumser通过NameServer就可以知道整个Broker集群的路由信息，从而进行消息的投递和消费。NameServer通常也是集群的方式部署，各实例间相互不进行信息通讯。Broker是向每一台NameServer注册自己的路由信息，所以每一个NameServer实例上面都保存一份完整的路由信息。当某个NameServer因某种原因下线了，Broker仍然可以向其它NameServer同步其路由信息，Producer,Consumer仍然可以动态感知Broker的路由的信息。
+- BrokerServer：Broker主要负责消息的存储、投递和查询以及服务高可用保证，为了实现这些功能，Broker包含了以下几个重要子模块。
+
+1. Remoting Module：整个Broker的实体，负责处理来自clients端的请求。
+2. Client Manager：负责管理客户端(Producer/Consumer)和维护Consumer的Topic订阅信息
+3. Store Service：提供方便简单的API接口处理消息存储到物理硬盘和查询功能。
+4. HA Service：高可用服务，提供Master Broker 和 Slave Broker之间的数据同步功能。
+5. Index Service：根据特定的Message key对投递到Broker的消息进行索引服务，以提供消息的快速查询。
+
+> 来源 [Apache RocketMQ开发者指南](https://github.com/apache/rocketmq/tree/master/docs/cn)
+
+
+
+## 六 RocketMQ集群模式有哪些？
 
 
 
@@ -54,7 +85,21 @@ RocketMQ：
 
 
 
-## 五 RocketMQ集群模式？
+
+
+
+
+## 七 RocketMQ集群工作流程？
+
+结合部署架构图，描述集群工作流程：
+
+- 启动NameServer，NameServer起来后监听端口，等待Broker、Producer、Consumer连上来，相当于一个路由控制中心。
+- Broker启动，跟所有的NameServer保持长连接，定时发送心跳包。心跳包中包含当前Broker信息(IP+端口等)以及存储所有Topic信息。注册成功后，NameServer集群中就有Topic跟Broker的映射关系。
+- 收发消息前，先创建Topic，创建Topic时需要指定该Topic要存储在哪些Broker上，也可以在发送消息时自动创建Topic。
+- Producer发送消息，启动时先跟NameServer集群中的其中一台建立长连接，并从NameServer中获取当前发送的Topic存在哪些Broker上，轮询从队列列表中选择一个队列，然后与队列所在的Broker建立长连接从而向Broker发消息。
+- Consumer跟Producer类似，跟其中一台NameServer建立长连接，获取当前订阅Topic存在哪些Broker上，然后直接跟Broker建立连接通道，开始消费消息。
+
+> 来源 [Apache RocketMQ开发者指南](https://github.com/apache/rocketmq/tree/master/docs/cn)
 
 
 
@@ -64,7 +109,7 @@ RocketMQ：
 
 
 
-**MQ 的常见问题有：**
+MQ 的常见问题有：**
 
 1. 消息的顺序问题
 2. 消息的重复问题
@@ -85,3 +130,4 @@ RocketMQ：
 
 [RocketMQ学习](https://blog.csdn.net/dingshuo168/article/details/102970988)
 
+[Apache RocketMQ开发者指南](https://github.com/apache/rocketmq/tree/master/docs/cn)
