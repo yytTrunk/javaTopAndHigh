@@ -79,13 +79,21 @@ RocketMQ架构上主要分为四部分，如上图所示:
 
 ## 六 RocketMQ集群模式有哪些？
 
+- #### 多Master多Slave模式-异步复制
 
+每个Master配置一个Slave，有多对Master-Slave，HA采用异步复制方式，主备有短暂消息延迟（毫秒级），这种模式的优缺点如下：
 
+​	优点：即使磁盘损坏，消息丢失的非常少，且消息实时性不会受影响，同时Master宕机后，消费者仍然可以从Slave消费，而且此过程对应用透明，不需要人工干预，性能同多Master模式几乎一样；
 
+​	缺点：Master宕机，磁盘损坏情况下会丢失少量消息。
 
+- #### 多Master多Slave模式-同步双写
 
+每个Master配置一个Slave，有多对Master-Slave，HA采用同步双写方式，即只有主备都写成功，才向应用返回成功，这种模式的优缺点如下：
 
+​	优点：数据与服务都无单点故障，Master宕机情况下，消息无延迟，服务可用性与数据可用性都非常高；
 
+​	缺点：性能比异步复制模式略低（大约低10%左右），发送单个消息的RT会略高，且目前版本在主节点宕机后，备机不能自动切换为主机。
 
 
 
@@ -99,17 +107,31 @@ RocketMQ架构上主要分为四部分，如上图所示:
 - Producer发送消息，启动时先跟NameServer集群中的其中一台建立长连接，并从NameServer中获取当前发送的Topic存在哪些Broker上，轮询从队列列表中选择一个队列，然后与队列所在的Broker建立长连接从而向Broker发消息。
 - Consumer跟Producer类似，跟其中一台NameServer建立长连接，获取当前订阅Topic存在哪些Broker上，然后直接跟Broker建立连接通道，开始消费消息。
 
-> 来源 [Apache RocketMQ开发者指南](https://github.com/apache/rocketmq/tree/master/docs/cn)
+> 参考 [Apache RocketMQ开发者指南](https://github.com/apache/rocketmq/tree/master/docs/cn)
+
+
+
+## 八 RocketMQ特性？
+
+### 8.1 普通消息发送流程
+
+
+
+### 8.2 定时消息
+
+
+
+### 8.3 顺序消息
+
+
+
+### 8.4 事务消息
 
 
 
 
 
-
-
-
-
-MQ 的常见问题有：**
+MQ 的常见问题有：
 
 1. 消息的顺序问题
 2. 消息的重复问题
