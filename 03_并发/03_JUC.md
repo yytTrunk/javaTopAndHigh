@@ -361,7 +361,7 @@ public static ExecutorService newCachedThreadPool() {
 
 当执行一段时间后，需要执行的线程数变少，（maximumPoolSize-corePoolSize）个线程，会在等待keepAliveTime后关闭。corePool中的线程永远不会释放。
 
-![线程池执行流程](E:\tt文档\我的文档\ttGit\JavaInterview\img\03\03_05.PNG)
+![线程池执行流程](.\img\03\03_05.PNG)
 
 1. 创建了线程池后，线程池会等待任务提交
 
@@ -908,7 +908,9 @@ class ProAndCon {
 
 #### 10.1 synchronized用法
 
-主要有三种用法，一是修饰实例方法，二是修饰静态方法、三是修饰代码代码块。
+synchronized为内置锁，可重入。
+
+主要有三种用法，一是修饰实例方法，二是修饰静态方法、三是修饰代码块。
 
 修饰实例方法，锁对象是当前对象实例。
 
@@ -968,19 +970,19 @@ public class TestSynchronized {
             18    20    18   any
 ```
 
-#### 10.2 synchronized的实现？
+#### 10.2 synchronized的底层原理实现？
 
 synchronized是内置锁，可重入，内部通过Monitor监视器实现。
 
 synchronized修饰方法，flags多了`ACC_SYNCHRONIZED`字段，用于表明该方法被关键字synchronized修饰，为同步方法。线程在执行到方法时，发现有`ACC_SYNCHRONIZED`标志，会先去获取监视器，获取到监视器，继续执行，执行完毕后释放监视器。后来的线程，获取不到监视器，会被阻塞。
 
-synchronized修饰代码块，同步代码块，前后多了`monitorenter`和`monitorexit`指令，用于表明同步代码块的开始与结束。线程执行到`monitorenter`后，会去尝试获取锁对象monitor，该对象存放在Java对象的对象头中，不同的配置表示不同的锁类型，每个Java对象存在对象头，因此都可以作为锁对象。当计数器为0，就可以成功获取，获取后计数器值加1。在执行到`monitorexit`时，计数器值减1，为0时，即释放锁。如果获取对象锁失败，会被阻塞，直至获取到锁。
+synchronized修饰代码块，同步代码块，前后多了`monitorenter`和`monitorexit`指令，用于表明同步代码块的开始与结束。线程执行到`monitorenter`后，会去尝试获取锁对象monitor，本质是对monitor对象加锁，该对象存放在Java对象的对象头中，不同的配置表示不同的锁类型，每个Java对象存在对象头，因此都可以作为锁对象。synchronized可重入，因为monitor对象中存在一个计数器，当计数器为0，就可以成功获取，获取后计数器值加1。在执行到`monitorexit`时，计数器值减1，为0时，即释放锁。如果获取对象锁失败，会被阻塞，直至获取到锁。
 
 如上反编译后，同时多了异常表，用于捕获同步代码块中异常，当5-15行出现 异常，跳转第18行执行，再次执行一次`monitorexit`指令，用于释放锁。如果没有异常，则会正常执行第14行进行释放锁。因此，synchronized也是会通过try-finally来隐式释放锁。
 
 **以下为扩展**
 
-解释器在执行`monitorenter`指令时，会先通过解释器，包含模板解释器和字节码解释器，默认会使用模板解释器，位于[templateInterpreter.cpp](http://hg.openjdk.java.net/jdk/jdk/file/6659a8f57d78/src/hotspot/share/interpreter/templateInterpreter.cpp)，其中字节码对应机器码模板位于[templateTable.cpp](http://hg.openjdk.java.net/jdk/jdk/file/6659a8f57d78/src/hotspot/share/interpreter/templateTable.cpp)中。针对不同平台，`monitorenter`与`monitorexit`的实现不同，X86平台对应代码[templateTable_x86_64.cpp](http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/9ce27f0a4683/src/cpu/x86/vm/templateTable_x86_64.cpp#l3667)。模板解释器是在运行时会依据字节码模板表、抽象解释器生成本地代码，之后对指令解析是通过该代码。因此，也可以通过查看字节码解释器，查看`monitorenter`处理逻辑，对应代码[bytecodeInterpreter.cpp#1816](http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/9ce27f0a4683/src/share/vm/interpreter/bytecodeInterpreter.cpp#l1816) 。在[文章](https://github.com/farmerjohngit/myblog/issues/13)中，该作者对该代码解释十分清楚，可参考。最终都会解析进入相应的指令方法中，位于[interpreterRuntime.cpp](http://hg.openjdk.java.net/jdk/jdk/file/6659a8f57d78/src/hotspot/share/interpreter/interpreterRuntime.cpp)的InterpreterRuntime::monitorenter和InterpreterRuntime::monitorexit方法中。
+解释器在执行`monitorenter`指令时，会先通过解释器，包含模板解释器和字节码解释器，默认会使用模板解释器，位于[templateInterpreter.cpp](http://hg.openjdk.java.net/jdk/jdk/file/6659a8f57d78/src/hotspot/share/interpreter/templateInterpreter.cpp)，其中字节码对应机器码模板位于[templateTable.cpp](http://hg.openjdk.java.net/jdk/jdk/file/6659a8f57d78/src/hotspot/share/interpreter/templateTable.cpp)中。针对不同平台，`monitorenter`与`monitorexit`的实现不同，X86平台对应代码[templateTable_x86_64.cpp](http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/9ce27f0a4683/src/cpu/x86/vm/templateTable_x86_64.cpp#l3667)。模板解释器是在运行时会依据字节码模板表、抽象解释器生成本地代码，之后对指令解析是通过该代码。因此，也可以通过查看字节码解释器，查看`monitorenter`处理逻辑，对应代码[bytecodeInterpreter.cpp#1816](http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/9ce27f0a4683/src/share/vm/interpreter/bytecodeInterpreter.cpp#l1816) 。在[文章](https://github.com/farmerjohngit/myblog/issues/13)中，作者对该代码解释十分清楚，可参考。最终都会解析进入相应的指令方法中，位于[interpreterRuntime.cpp](http://hg.openjdk.java.net/jdk/jdk/file/6659a8f57d78/src/hotspot/share/interpreter/interpreterRuntime.cpp)的InterpreterRuntime::monitorenter和InterpreterRuntime::monitorexit方法中。
 
 InterpreterRuntime::monitorenter方法代码如下。
 
@@ -1051,7 +1053,7 @@ IRT_END
 | 无锁     | 没有锁，普通对象                                           |                                                              |
 | 偏向锁   | 同一个线程申请锁时，能够直接获取                           | 只有一个线程进入临界区，没有竞争，适用于只有一个线程访问同步代码块。在锁竞争激烈的场合没有太强的优化效果。 |
 | 轻量级锁 | 多个线程竞争同步资源时，没有获取到锁的线程，自旋等待锁释放 | 多线程未竞争或竞争不激烈，适用于同步代码块执行速度快，追求响应时间 |
-| 重量级锁 | 多个线程竞争同步资源时，没有获取到锁的线程，阻塞等待唤醒   | 多线程存在竞争，适用于同                                     |
+| 重量级锁 | 多个线程竞争同步资源时，没有获取到锁的线程，阻塞等待唤醒   | 多线程存在竞争                                               |
 
 对象头中锁状态信息也会随着锁的升级进行变化
 
@@ -1100,7 +1102,7 @@ ReentrantLock,默认非公平锁，构造方法传入true为公平锁，false为
 
 Synchronized不支持
 
-ReentrantLock可以实现分组唤醒需要唤醒的线程，实现精确唤醒
+ReentrantLock可以通过创建多个等待条件，分组唤醒需要唤醒的线程，实现精确唤醒
 
 **示例** (多条件Condition应用)
 
@@ -1201,9 +1203,9 @@ class CyclicPrint {
 }
 ```
 
+#### 10.5 基于CAS，有哪些典型应用？
 
-
-
+原子类AtomInteger、AQS
 
 
 
@@ -1284,7 +1286,7 @@ CAS通过调用sun.misc.Unsafe中方法实现，Unsafe类包含直接内存资�
 
 CAS操作底层实现依赖于CPU提供的特性指令，该指令的完成必须是连续的，执行过程中不会被中断，为原子指令，因此不会出现数据不一致情况，如x86的cmpxchg指令，均为非常轻量级的操作。
 
-Java中的原子类如AtomicInteger，采用CAS实现乐观锁。
+Java中的原子类如AtomicInteger、采用CAS实现乐观锁。
 
 #### 12.2 CAS存在哪些问题？
 
@@ -1499,4 +1501,8 @@ synchronized通过加锁，一次只能有一个线程访问，能够保证一�
 3）线程Ｂ执行，同样通过getIntVolatile拿到value值为5，调用compareAndSwapInt方法，再次从内存中读取value值与期望值5比较，相同，则可以进行更新，更新为8，执行完毕
 
 ４）此时线程Ａ调度回来接着执行，此时主内存中的value值已经被改变为8，而第一次获取到期望值仍为3，再调用compareAndSwapInt方法时，还是会从内存中再次读取一次value值为8，与期望值不符，compareAndSwapInt返回false，继续自旋，直至成功。
+
+
+
+Java8对CAS的优化
 
