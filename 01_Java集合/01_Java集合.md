@@ -280,16 +280,18 @@ HashMap中键值均可以为null值。
 相比于Java7，Java8中有了较大改变
 
 - ConcurrentHashMap，key和value均不能为null，会抛空指针异常，HashMap中当key值为null，设定hash为null
-- Java7中采用分段锁；Jsava8中采用了 CAS + synchronized来保证并发安全性，使用CAS来插入元素。
+- Java7中采用分段锁，将整个大数组划分为多个小段，每个小段对应一个锁，进行分段加锁；Java8中，进行了锁粒度的细化，锁为每个数组中元素，采用了 CAS + synchronized来保证并发安全性。
 
   
 
 ##### 2.2 put方法流程？
 
-- 若第一次table为null，先初始化一个默认容量为16的数组table。若不为null，根据(n - 1) & hash计算数组下标，若table[i]不存在元素，通过CAS写入元素
+- 若第一次table为null，先初始化一个默认容量为16的数组table。若不为null，根据(n - 1) & hash计算数组下标，若table[i]不存在元素为null时，不需要加锁，直接通过CAS写入元素，同时刻只有一个线程能够写入成功
 - 若table[i]存在元素，根据table[i]的hash值判断是否正在扩容，若在扩容，协助扩容
-- 若不在扩容，使用synchronized同步，锁为table[i]元素,，根据table[i]判断是进行链表还是树方式进行节点插入（因为转化为树后节点hash值为负数），插入时利用CAS。（锁的选择进行了优化）
+- 若不在扩容，使用synchronized同步，锁为table[i]元素，根据table[i]判断是进行链表还是树方式进行节点插入（因为转化为树后节点hash值为负数）。（锁的选择进行了优化）
 - 插入完成后，如果链表节点数为8个，将链表转化为红黑树
+
+因此，如果多个线程对同一个位置元素进行处理，才会使用synchronized加锁，否则是可以多线程同时操作。
 
 
 

@@ -1,4 +1,4 @@
-## 一 线程安全
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_06.PNG)[](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_09.PNG) 线程安全
 
 ### 1. 并发与并行区别？
 
@@ -37,7 +37,9 @@ Java内存模型其实就是规定了工作内存与主内存交换数据的方�
 
 主内存是虚拟机内存中的一部分，可对应于Java堆中的对象实例数据部分。
 
-![工作内存与主内存交互](.\img\03\03_01.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_01.PNG)
+
+
 
 
 
@@ -45,7 +47,7 @@ Java内存模型其实就是规定了工作内存与主内存交换数据的方�
 
 主要是通过6个指令，read、load、use、assign、store、write，和遵从缓存一致性协议，及CPU嗅探机制等。
 
-![工作内存与主内存交互](.\img\03\03_02.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_02.PNG)
 
 
 
@@ -78,7 +80,7 @@ Java内存模型其实就是规定了工作内存与主内存交换数据的方�
 - 此时为了避免其它线程去从主内存中读取该变量值，会对缓存该变量的区域加锁，使得在变量修改过程中（变量从工作内存写入主内存过程中），其它的线程不能够去主内存中读取该变量，当更新完成后，unlock后才能读取
 - 同时，其它线程是如何知道该变量已被其他线程修改，需要再从主内存中读取？依据缓存一致性协议，CPU不断嗅探总线上的数据交换，能够得知数据的变化，当volatile修饰的变量发生变化时，对应缓存中存储的变量会变为失效状态，需要从主内存中再读取一遍，从而保证了变量为最新值
 
-![volatile流程](.\img\03\03_03.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_03.PNG)
 
 
 
@@ -96,7 +98,7 @@ Java内存模型其实就是规定了工作内存与主内存交换数据的方�
 
 **总结**：即使volatile修饰的变量，也不能保证底层工作内存与主内存数据交互指令的原子性，可能会导致已经写入工作内存的变量失效，使得少了一次+1操作，因此实际值会比期望值小或者相等。
 
-![volatile不具备原子性](.\img\03\03_04.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_04.PNG)
 
 #### 2.6 什么是先行并发原则（happends-before）?
 
@@ -148,7 +150,7 @@ OOP指普通对象指针，Klass是C++中对等于Java中的对象。
 
 ​	Java中的线程创建依赖于系统内核，创建线程时JVM会调用系统库去创建内核线程，一条Java线程会映射到一条系统的轻量级进程上（指通常说的线程），1对1。
 
-![Java中线程](.\img\03\03_10.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_10.PNG)
 
 #### 4.3 线程与进程？
 
@@ -259,7 +261,7 @@ Callable的设计在于既能够实现像Runnable一样创建任务，同时还�
 
 结束（Terminated）:终止状态，线程已经结束。
 
-![线程生命周期](.\img\03\03_09.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_09.PNG)
 
 
 
@@ -361,7 +363,7 @@ public static ExecutorService newCachedThreadPool() {
 
 当执行一段时间后，需要执行的线程数变少，（maximumPoolSize-corePoolSize）个线程，会在等待keepAliveTime后关闭。corePool中的线程永远不会释放。
 
-![线程池执行流程](.\img\03\03_05.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_05.PNG)
 
 1. 创建了线程池后，线程池会等待任务提交
 
@@ -431,7 +433,7 @@ CachedThreadPool 为SynchronousQueue
 
 
 
-## 六 AQS
+## 六 AQS（抽象队列同步器）
 
 #### 6.1 AQS的实现原理？核心为3点
 
@@ -443,19 +445,19 @@ CachedThreadPool 为SynchronousQueue
 
 **核心三点**
 
-- CAS、保证共享状态state的修改，保证原子性
-- 自旋、控制线程在自己范围内，
+- CAS，保证共享状态state的修改，保证原子性
+- 自旋，控制线程在自己范围内，
 - LockSupport的park/unpark，避免线程一直自旋空跑，通过park/unpark使线程根据需要阻塞和唤醒
 
 **采用了模板方法模式**，AQS为抽象类，使用者需要重新AQS中的指定方法，主要是对同步状态state获取和释放，来适配锁的模式。而AQS中的模板方法会去调用使用者重写的那些方法。然后使用者再调用那些模板方法来构建锁。
 
 ***第二步***  存放阻塞线程的队列
 
-AQS用于存放管理阻塞线程的队列，该队列是基于CLH变种的队列，是一种基于双向链表的队列。该队列只存在节点与节点之间的关联关系，不向线程池那样存在实例化的队列。
+AQS用于存放管理阻塞线程的队列，该队列是基于CLH变种的队列，是一种基于双向链表的队列。该队列只存在节点与节点之间的关联关系，不同线程池存在实例化的队列。
 
 队列中存放的节点代表一个线程节点Node，其中包含线程、用volatile修饰线程的等待状态信息waitStatus、前继后继节点。该状态包含5个状态值，后面主要是通过CAS，来修改每个节点的状态信息，不同状态信息表示节点处于同步队列还是等待队列，是否被取消，是否状态被唤醒等。队列中排队的线程主要通过判断前继节点的状态来决定是否能够执行。
 
-![同步队列与等待队列](.\img\03\03_08.PNG)
+![同步队列与等待队列](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_08.PNG)
 
 
 
@@ -1203,10 +1205,6 @@ class CyclicPrint {
 }
 ```
 
-#### 10.5 基于CAS，有哪些典型应用？
-
-原子类AtomInteger、AQS
-
 
 
 
@@ -1217,7 +1215,7 @@ class CyclicPrint {
 
 死锁是指两个或两个以上的线程在执行过程中，因争夺资源而互相等待的线程，若无外力干涉，他们将一直持续下去。
 
-![死锁](.\img\03\03_06.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_06.PNG)
 
 **主要原因**
 
@@ -1504,5 +1502,7 @@ synchronized通过加锁，一次只能有一个线程访问，能够保证一�
 
 
 
-Java8对CAS的优化
+#### 12.8 基于CAS，有哪些典型应用？
+
+原子类AtomicInteger、AQS、ConcurrentHashMap中向tab[i]中插入元素时
 
