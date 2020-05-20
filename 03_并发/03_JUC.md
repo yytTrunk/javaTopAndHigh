@@ -1,4 +1,4 @@
-![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_06.PNG)[](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_09.PNG) 线程安全
+## 一 线程安全
 
 ### 1. 并发与并行区别？
 
@@ -283,7 +283,7 @@ Callable的设计在于既能够实现像Runnable一样创建任务，同时还�
 
 
 
-阿里巴巴手册建议
+阿里巴巴Java开发手册建议
 
 **强制：线程资源必须通过线程池提供，不允许应用自行显式创建线程**
 
@@ -427,9 +427,34 @@ CachedThreadPool 为SynchronousQueue
 
 
 
-#### 5.8 线程池底层代码实现？
+#### 5.8 线程池底层代码实现逻辑？
 
+1. 线程池ThreadPoolExecutor类中，主要维护四个核心变量
 
+   a)	线程池具备多个状态，正在运行（RUNNING）、正在运行但是不再接受新任务（shutdown）、不再接受新任务同时停止所有任务（STOP）和终止状态（SHUTDOWN）。线程池维护AtomicInteger变量clt进行表示，高3位表示线程池状态，低29位工作线程个数。通过读取该参数能够获取线程池状态和工作线程个数；
+
+   ```java
+   // 记录线程池状态和工作线程个数
+   private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
+   // 用于存储，创建的worker，每个worker实际对应一个线程
+   private final HashSet<Worker> workers = new HashSet<Worker>();
+   // 用于存储，加入的工作任务，正在排队等待执行
+   private final BlockingQueue<Runnable> workQueue;
+   // 锁
+   private final ReentrantLock mainLock = new ReentrantLock();
+   ```
+
+2. 调用execute()方法提交线程后，通过clt计算出当前线程池状态和正在执行的线程数，再根据核心线程数、阻塞队列大小、最大线程数来判断能否继续创建任务；
+
+3. 创建任务时，先通过CAS修改ctl，再获取锁mainLock，将任务加入存储正在工作线程变量workers中，加入成功后，调用start()方法启动该线程
+
+4. 存活的线程需要不断从阻塞队列中获取任务，然后执行，执行过程会进行加锁
+
+5. 可以通过继承ThreadPoolExecutor，实现beforeExecute() 和 afterExecute()方法，在线程执行前后，进行操作
+
+#### 5.9  如果机器宕机，线程池中阻塞队列的请求该如何处理？
+
+线程池提交任务时，将任务信息，同步到数据库中，维护多个状态，包含未提交、已提交等。当系统重启后，从数据库中获取到未提交、已提交的任务信息，可将其重新提交。
 
 
 
