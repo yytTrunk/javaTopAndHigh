@@ -146,7 +146,7 @@ ioc 实现中xml 中描述的Bean信息都将保存至BeanDefinition 对象中�
 
 2. 将bean的id和name参数，通过BeanDefinitionRegistry进行注册，
 
- xml中bean的id 和name属性没有包含在BeanDefinition 中，将ID 作为当前Bean的存储key注册到了BeanDefinitionRegistry 注册器中，name 作为别名key 注册到了 AliasRegistry 注册中心。其最后都是指向其对应的BeanDefinitio，存在ConcurrentHashMap中。
+ xml中bean的id 和name属性没有包含在BeanDefinition 中，将ID 作为当前Bean的存储key注册到了BeanDefinitionRegistry 注册器中，name 作为别名key 注册到了 AliasRegistry 注册中心。其最后都是指向其对应的BeanDefinition，存在ConcurrentHashMap中。
 
 **谁来主导读取并装载Bean**(BeanDefinitionReader)
 

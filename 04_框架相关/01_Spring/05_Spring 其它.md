@@ -4,11 +4,31 @@
 
 Spring核心，IOC（控制反转，依赖注入）和AOP。
 
-应用启动时，Spring容器会去读取XML文件或者根据注解，去创建Bean对象实例（基于反射技术），由于对象实例中可能存在依赖关系，会进行依赖注入。
+应用启动时，Spring容器会去读取XML文件或者根据注解，去创建Bean对象实例（基于反射技术），由于对象实例中可能存在依赖关系，会进行依赖注入。同时查看是否存在AOP，使用动态代理生成Bean对象。
 
-同时存在以下配置方法
+同时具备以下扩充配置方法
 
+Spring 中Bean的生命周期包含创建、初始化、销毁。
 
+1）创建Bean时，会将xml中描述Bean信息都将保存至BeanDefinition 对象，然后通过BeanDefinitionRegistry进行注册，注册过程即保存Bean信息到内存中，为一个ConcurrentHashMap对象。
+
+2）解析加载Bean，依据xml文件中对Bean的描述信息，进行解析加载loadBeanDefinitions。
+
+3）Bean的依赖注入，会判断这个Bean是否存在依赖关系，若存在也需要进行注入，可以通过set方法注入、构造方法注入、自动注入和注解。如果存在AOP，需要生成动态代理对象。
+
+4）Bean的加载机制，支持懒加载、非懒加载。
+
+5）Bean的**创建**，调用getBean()方法后，通过Beanfactory，使用反射进行创建。
+
+6）Bean的作用域，创建Bean时，会根据参数scope值，判断为单例、多例、request还是Session。
+
+7）Bean创建后，判断是否存在后置处理器BeanPostProcessor，可以在初始化前后，执行自定义方法
+
+接着，会查看是否显式指定初始化方法init-method，进行**初始化**
+
+8）创建完成后，Bean会长期存活在Spring 的IOC容器中
+
+9）Bean使用后，可以进行**销毁**，销毁前会判断是否指定了destroy-method，销毁前会执行
 
 ### 2.Spring中用到了哪些设计模式？
 
