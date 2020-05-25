@@ -1,16 +1,32 @@
-## Spring框架知识
+# Spring框架知识
 
-### 一 IOC容器
+## 一 IOC容器
 
-#### 1.1 说说对IOC容器的理解？
+### 1.1 说说对IOC容器的理解？
 
 IOC，称为控制反转，为一种设计思想。
 
 传统创建对象可以通过new对象直接实例化，但是通常一个Service对象可能存在复杂的依赖，使用该对象时需要去维护复杂依赖关系，使得对这个对象的引用变得复杂。
 
-IOC容器通过控制反转，依赖注入来解决这一问题，可以统一对象的创建，自动维护管理对象。采用配置XML文件或者注解的方式实现，降低了编码和维护的复杂度。
+IOC容器通过控制反转，依赖注入来解决这一问题，实现类与类之间的解耦合。比如，
 
-#### 1.2 Bean的构建方法有哪些？
+```java
+@Service
+public class MyServiceImpl implements MyService() {}
+// 使用时需要替换MyServiceImpl为NewMyServicveImpl,去掉原来@Service注解
+@Service
+public class NewMyServicveImpl implements MyService() {}
+```
+
+应用启动时，Spring IOC容器，会加载xml配置文件或者注解，实例化一些bean对象，再根据详细配置，去初始化对象或者处理bean对象之间的依赖关系，进行依赖注入，从而完成对应用中使用到对象的创建和管理。
+
+底层核心是通过反射技术。
+
+**总结**
+
+统一对象的创建，自动维护管理对象（管理对象之间依赖关系），使类与类之间解耦。底册实现通过反射技术，可以采用配置XML文件或者注解的方式实现，降低了编码和维护的复杂度。
+
+### 1.2 Bean的构建方法有哪些？
 
 Spring中Bean的创建，主要有四种方式
 
@@ -37,7 +53,7 @@ Spring中Bean的创建，主要有四种方式
 
 
 
-#### 1.3 Bean的作用域包含哪些？
+### 1.3 Bean的作用域包含哪些？
 
 通过配置参数scope可配置Bean的作用域，包含
 
@@ -46,10 +62,10 @@ Spring中Bean的创建，主要有四种方式
 
 还包含其它request、session等参数
 
-- scope=“request”，每次http请求都会创建一个新的Bean，但仅在该次HTTP request中有效
-- scope=“session”，每次http请求都会创建一个新的Bean，但仅在该次HTTP session中有效
+- scope=“request”，每次http请求都会创建一个新的Bean，但仅在该次HTTP request中有效，请求完成后，Bean会失效
+- scope=“session”，每个Session中创建一个Bean，Session过期后，Bean实现
 
-#### 1.4 Bean的生命周期？
+### 1.4 Bean的生命周期？
 
 Bean对象生命周期包含创建、初始化、销毁。可以通过配置参数 
 
@@ -60,7 +76,7 @@ Bean对象生命周期包含创建、初始化、销毁。可以通过配置参�
 <bean class="com.tuling.spring.HelloSpring" init-method="init" destroy-method="destroy"></bean>
 ```
 
-#### 1.5 Bean的加载机制？
+### 1.5 Bean的加载机制？
 
 可以配置Bean的加载时间，设置属性lazy-init
 
@@ -68,7 +84,7 @@ Bean对象生命周期包含创建、初始化、销毁。可以通过配置参�
 - false，非懒加载，容器启动时即创建对象，容器启动过程即可发现程序错误。
 - default，默认，采用default-lazy-init 中指定值，如果default-lazy-init  没指定就是false
 
-#### 1.6 Bean的依赖注入（DI）？
+### 1.6 Bean的依赖注入（DI）？
 
 一个Bean依赖于另外一个Bean，传统可以通过外部传入，内部构建。
 
@@ -114,7 +130,7 @@ byType：查找所有的set方法，将符合符合参数类型的bean注入
 
 需要在xml文件中开启
 
-#### 1.7 Bean是如何被构建的？
+### 1.7 Bean是如何被构建的？
 
 **一句话概括**
 
@@ -193,7 +209,7 @@ Bean创建时序图
 
 
 
-#### 1.8 Bean中的依赖关系是如何处理的？及如何处理循环依赖？
+### 1.8 Bean中的依赖关系是如何处理的？及如何处理循环依赖？
 
 循环依赖是指，对象A依赖于B，B依赖于C，C依赖于A，类似这样循环依赖。
 
@@ -201,7 +217,7 @@ Spring在获取对象A时，通过提前曝光，会将A加入正在创建Bean�
 
 Spring只能解决Setter方法注入的单例bean之间的循环依赖
 
-#### 1.9 Bean工厂BeanFactory与上下文ApplicationContext区别？
+### 1.9 Bean工厂BeanFactory与上下文ApplicationContext区别？
 
 ![](.\img\04_01_05.png)
 
@@ -216,14 +232,14 @@ ApplicationContext扩展了如下功能
 
 
 
-#### 1.10 将一个类声明为Spring的Bean的注解有哪些？  
+### 1.10 将一个类声明为Spring的Bean的注解有哪些？  
 
 - @Component，用于标注任意类为Spring组件，当不明确该类为哪一层，可以该注解描述
 - @Repository，持久层Dao层，用于数据库相关操作
 - @Service，对应服务层
 - @Controller，对应控制层
 
-#### 1.11 @Component 与@Bean的区别？
+### 1.11 @Component 与@Bean的区别？
 
 - 作用对象不同，@Bean作用于方法，@Component作用于类
 
@@ -233,13 +249,10 @@ ApplicationContext扩展了如下功能
 
 
 
-#### 1.12 Spring中的Bean是单例的吗？如果是单例如何保证线程安全？
+### 1.12 Spring中的Bean是单例的吗？如果是单例如何保证线程安全？
 
-默认是单例，可以通过scope进行配置。
+默认是单例，可以通过scope进行作用域配置。
 
-当单例Bean存在线程安全问题，对该对象中的非静态成员变量进行同时写操作会存在线程安全问题。
+单例Bean存在线程安全问题，对该对象中的非静态成员变量，进行并发写操作会存在线程安全问题。所以，通常不会在实例中声明变量，而是多个service互相调用，然后直接去并发访问数据库。
 
 #### 
-
-### 参考
-
