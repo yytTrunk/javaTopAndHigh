@@ -22,7 +22,7 @@ Spring 中Bean的生命周期包含创建、初始化、销毁。
 
 6）Bean的作用域，创建Bean时，会根据参数scope值，判断为单例、多例、request还是Session。
 
-7）Bean创建后，判断是否存在后置处理器BeanPostProcessor，可以在初始化前后，执行自定义方法
+7）Bean构建好后，判断是否存在后置处理器BeanPostProcessor，可以在初始化前后，执行自定义方法
 
 接着，会查看是否显式指定初始化方法init-method，进行**初始化**
 
@@ -32,13 +32,17 @@ Spring 中Bean的生命周期包含创建、初始化、销毁。
 
 ### 2.Spring中用到了哪些设计模式？
 
-- 工厂设计模式
+- 工厂模式
+
+Spring IOC就相当于一个大的工厂，将所有的Bean实例都方法在Spring容器中，当需要使用哪个Bean时，就可以从Spring容器中取。
 
 使用工厂模式通过BeanFactory、ApplicationContext创建Bean对象
 
 ![](.\img\04_01_05.png)
 
 - 单例模式
+
+Spring中Bean作用域默认为单例。
 
 Spring IOC中当getBean()时，会先从singletonObjects（为ConcurrentHashMap）一级缓存池中，去尝试获取单例Bean，此时通过双重校验保证获取正确，单例模式。
 
@@ -66,12 +70,17 @@ protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 
 - 代理模式
 
-Spring AOP实现
+Spring AOP能够对一些类织入一些增强代码，生成动态代理对象，调用者访问目标对象时，会先经过代理对象，此时会执行增强代码，然后再执行目标对象中方法。
 
-### 
+以上即为代理模式的体现，使用动态代理对象，去代理目标对象，同时加入一些增强代码。
+
+### 3. Spring中常用注解有哪些？
 
 
 
-3. Spring中常用注解有哪些？
 
-微信文章
+
+
+
+
+
