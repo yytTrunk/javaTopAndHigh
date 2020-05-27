@@ -16,13 +16,15 @@
 
 ### 二 JVM内存结构？
 
+#### 2.1 内存结构包含哪几块区域？
+
 用来描述JVM内存管理机制，当一个类.class文件通过类加载机制加载进JVM内存中，它如何在内存中存放，哪些信息该放在哪个区域，在代码执行时如何获取的，JVM内存结构主要用来解决这个事情。主要包含以下几个区域
 
 - 虚拟机栈
 
-虚拟机栈表示的是Java类中方法执行时会在虚拟机栈中创建一个栈帧，压入虚拟机栈中，方法执行完后再出栈，每个方法都会对应一个栈帧。栈帧里用来存放方法中声明的局部变量表，操作数栈，动态链接和方法入口等信息。每个方法执行完，都会在虚拟机栈中有个进栈和出栈的过程。
+虚拟机栈表示的是Java类中方法执行时会在虚拟机栈中创建一个栈帧，压入虚拟机栈中，方法执行完后再出栈，每个方法都会对应一个栈帧，虚拟机栈线程私有。栈帧里用来存放方法中声明的局部变量表，操作数栈，动态链接和方法入口等信息。每个方法执行完，都会在虚拟机栈中有个进栈和出栈的过程。
 
-![虚拟机栈描述](.\img\02\02_01.PNG)
+![虚拟机栈描述](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_01.PNG)
 
 **局部变量表**，容易理解，存放方法中局部变量，包含基本数据类型，对象的引用（局部变量也会有对象变量）等
 
@@ -42,23 +44,32 @@
 
 堆存放几乎所有实例对象，由垃圾回收器自动回收，所有线程共享。
 
-- 方法区（也称作永久代，在Java8中称作元空间）
+- 方法区（以前也称作永久代，在Java8中称作元空间）
 
 加载类后，方法中信息存放在虚拟机栈中，类中声明的变量，常量，这些信息放在哪里呢？方法区。
 
 方法区用于存储被加载的类元信息（Klass，类的结构信息如类的版本、字段，有哪些方法等信息，在对象头中的类型指针Klass Pointer即指向该位置）、常量、静态变量、即时编译后代码等。
 
-在Java8中，方法区使用的内存为直接内存，是物理内存，为JVM占用的内存以外的本地内存。
+在Java8中，元空间使用的内存为直接内存，是物理内存，为JVM占用的内存以外的本地内存。
 
 - 程序计数器
 
 线程私有，用于记录当前线程代码（指字节码）执行位置。
 
+#### 2.2 Java8对内存结构进行了哪些改进？
+
+1. 移除永久代（Metaspace），改为元空间（Metaspace）
+2. 将永久代中的常量和静态变量转移到堆中
+3. 将永久代中的类元信息转移到元空间中
+4. 元空间使用的内存为直接内存，是物理内存，为JVM占用的内存以外的本地内存
+
+经过如此改进，类的元数据分配在本地内存中，元空间的最大可分配空间就是系统可用内存空间。因此，就不会遇到永久代存在时的内存溢出错误。但是带来问题是，必须监控内存消耗情况，一旦发生泄露，会占用大量本地内存。
+
 ### 三 关于堆区的垃圾回收
 
 堆存放几乎所有实例对象，由垃圾回收器自动回收，所有线程共享。
 
-![堆的垃圾回收](.\img\02\02_02.PNG)
+![堆的垃圾回收](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_02.PNG)
 
 采用复制算法
 
@@ -68,7 +79,7 @@
 
 通过visual GC插件，可以看到整个过程。
 
-![visualGC](.\img\02\02_03.PNG)
+![visualGC](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_03.PNG)
 
 ### 四 类加载机制
 
@@ -99,8 +110,6 @@
 - 类加载器接收到类加载的请求，**判断该类是否已被加载过？（若被加载过，直接返回）** **若没有，自身是否可以去加载?**
 - 逐级向上询问，直至启动类加载器，若启动类加载器也未加载过且不能加载，那么会逐级往下通知子加载器进行加载
 - 加载不到则会报ClassNotFoundException
-
-
 
 **例子**
 
@@ -217,7 +226,7 @@ Serial收集器的多线程版本，在STW时，有多个线程来完成GC任务
 
 与ParNew配合使用。
 
-![](.\img\02\02_06.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_06.PNG)
 
 PS：  [CMS在Java9中已被不推荐使用，后续将被移除](https://bugs.openjdk.java.net/browse/jdk-8229049)
 
@@ -235,17 +244,17 @@ PS：  [CMS在Java9中已被不推荐使用，后续将被移除](https://bugs.o
 
 **默认垃圾回收器组合**：以下7种，连线表示新生代和老年代的垃圾回收器组合
 
-![默认垃圾回收器组合](.\img\02\02_04.PNG)
+![默认垃圾回收器组合](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_04.PNG)
 
 **总结**：
 
-![](.\img\02\02_05.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_05.PNG)
 
 #### 5.7 G1垃圾回收器
 
 **历程**：
 
-![g1历程](./img/02/02_07.PNG)
+![g1历程](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_07.PNG)
 
 整体思想：化整为零，分而治之
 
@@ -257,7 +266,7 @@ PS：  [CMS在Java9中已被不推荐使用，后续将被移除](https://bugs.o
 - 可预测的停顿，STW可控，用户可以指定期望停顿时间
 - 用于替代CMS，Java9+默认GC
 
-![G1区域划分](.\img\02\02_10.PNG)
+![G1区域划分](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_10.PNG)
 
 **原理**：
 
@@ -273,7 +282,7 @@ PS：  [CMS在Java9中已被不推荐使用，后续将被移除](https://bugs.o
 - 最终标记，修正并发标记期间，由于用户线程继续运行导致标记产生变化的那部分对象
 - 筛选回收，根据期望时间制定回收计划
 
-![](.\img\02\02_09.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_09.PNG)
 
 **G1回收机制遇到的典型问题**：
 
@@ -281,11 +290,11 @@ PS：  [CMS在Java9中已被不推荐使用，后续将被移除](https://bugs.o
 
 - 不同region之间互相引用
 
-![](.\img\02\02_11.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_11.PNG)
 
 每个Region按照512个字节，分为若干个卡片，在每个Region中，都再对应一个Remembered Set，当卡片中存在引用时，会记录在对应Remembered Set中。因此在回收区域时，读取Remembered Set可以知道哪些卡片在引用我，只需要去扫描对应卡片的对象，避免了整个堆的扫描，提高了效率，典型空间换时间。
 
-![](.\img\02\02_12.PNG)
+![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_12.PNG)
 
 
 
@@ -312,8 +321,6 @@ PS：  [CMS在Java9中已被不推荐使用，后续将被移除](https://bugs.o
 大对象会直接进入老年代
 
 长期存活的对象（触发一次YGC，会+1，默认15次）将进入老年代
-
-
 
 - YGC，当新生代满了后会触发Young GC，新生代对象存生存期短，发生GC频率高
 - Full GC，老年代满了后，会触发Full GC（也会是要往老年代放对象，放不下的时候），在Full GC前触发一次YGC，能够加快老年代的回收对象
@@ -380,7 +387,7 @@ Jvm参数主要是以XX开头
 
 - Young GC
 
-![GC日志](.\img\02\02_13.PNG)
+![GCri值](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/02_13.PNG)
 
 
 
