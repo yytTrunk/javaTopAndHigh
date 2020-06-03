@@ -59,7 +59,7 @@ public void addUser() {
 
 如果方法B没有事务，直接调用方法B就会抛出异常；如果方法A存在事务，去调用方法B，则会加入该事务中。
 
-- #### PROPAGATION_REQUIRES_NEW （不支持当前事物）
+- #### PROPAGATION_REQUIRES_NEW （不支持当前事务）
 
 新建事务，如果当前存在事务，把当前事务挂起。
 
@@ -67,7 +67,7 @@ public void addUser() {
 
 **适用于** 该方法业务逻辑不能受主业务逻辑影响，如日志记录，不能因为主业务执行失败，需要回滚，导致日志记录也去回滚，使得日志无法记录。
 
-- #### PROPAGATION_NOT_SUPPORTED（不支持当前事物）
+- #### PROPAGATION_NOT_SUPPORTED（不支持当前事务）
 
 以非事务方式执行操作，如果当前存在事务，就把当前事务挂起。
 
@@ -75,7 +75,7 @@ public void addUser() {
 
 **适用于** 当前方法对主代码逻辑影响不大的情况，如发优惠券、发短信通知等
 
-- #### PROPAGATION_NEVER（不支持当前事物）
+- #### PROPAGATION_NEVER（不支持当前事务）
 
 以非事务方式执行，如果当前存在事务，则抛出异常。
 
