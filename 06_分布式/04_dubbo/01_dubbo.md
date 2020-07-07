@@ -90,13 +90,45 @@ Dubbo 提供了三种服务路由实现，分别为条件路由 ConditionRouter�
 
 
 
+## 七 dubbo的SPI机制是什么？
+
+**是什么**
+
+SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的本质是将接口实现类的全限定名配置在文件META-INF/services中，并由服务加载器读取配置文件，加载实现类。这样可以在运行时，动态为接口替换实现类。
+
+**应用场景**
+
+应用于插件扩展，新开发插件，接入到开源框架里，来扩展功能。
+
+比如：Java中的JDBC接口，Java中并没有提供实际的实现类。在项目运行时，依据使用到的数据库类型，引入对应jar，如MySQL为mysql-jdbc-connector.jar。
+
+比如：dubbo中的协议扩展、负载均衡扩展、注册中心扩展等。
 
 
 
+## 八 dubbo如何进行服务治理，服务降级？
 
+**服务治理**
 
+服务治理主要作用是改变运行时服务的行为和选址逻辑，达到限流，权重配置等目的。
 
+即如何管理服务，使服务能够更加高效运行？
 
+可以生成服务调用链，统计服务访问压力及时长
 
+**服务降级**
 
+服务调用可能出现问题
+
+1) 多个服务之间可能由于服务没有启动或者网络不通，调用中会出现远程调用失败;
+
+2) 服务请求过大，需要停止部分服务以保证核心业务的正常运行；
+
+解决
+
+```java
+<dubbo:reference id="xxxService" interface="com.x..service.xxxxService" check="true" async="false" retries="3" timeout="2000" mock="return false" />
+```
+
+可以通过配置接口重试次数或者超时时间，出现问题后进行服务降级dubbo提供了mock配置，可以返回固定值或者自定义mock业务处理类进行返回。
 
