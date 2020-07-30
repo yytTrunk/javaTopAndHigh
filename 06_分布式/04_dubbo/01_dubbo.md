@@ -1,14 +1,14 @@
-# dubbo
+# Dubbo
 
-## 一 dubbo工作原理是什么？
+## 一 Dubbo工作原理是什么？
 
 | 编号 | 分层                    | 作用                                                         |
 | ---- | ----------------------- | ------------------------------------------------------------ |
 | 1    | service层，接口层       | 给服务提供者和消费者来实现的                                 |
-| 2    | config层，配置层        | 主要是对dubbo进行各种配置的                                  |
+| 2    | config层，配置层        | 主要是对Dubbo进行各种配置的                                  |
 | 3    | proxy层，服务代理层     | 透明生成客户端的stub和服务端的skeleton，通过接口生成动态代理对象 |
 | 4    | registry层，服务注册层  | 负责服务的注册与发现                                         |
-| 5    | cluster层，集群层       | 封装多个服务提供者的路由以及负载均衡，将多个实例组合成一个服务 |
+| 5    | cluster层，集群层       | 封装多个服务提供者的路由以及负载均衡，并桥接注册中心，将多个实例组合成一个服务 |
 | 6    | monitor层，监控层       | 对rpc接口的调用次数和调用时间进行监控                        |
 | 7    | protocol层，远程调用层  | 封装rpc调用                                                  |
 | 8    | exchange层，信息交换层  | 封装请求响应模式，同步转异步                                 |
@@ -17,7 +17,25 @@
 
 流程图
 
-![dubbo流程](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/06/04/04_01.png)
+<img src="https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/06/04/04_01.png" alt="Dubbo流程" style="zoom: 67%;" />
+
+消费者
+
+- 动态代理，服务调用者通过接口生成动态代理对象，然后进行调用
+- 负载均衡，Cluster层能够感知到提供接口的服务器列表，通过负载均衡，选择一台设备
+- 通信协议，依照指定的通信协议（http、rmi、Dubbo）封装RPC调用
+- 信息交换，再封装，将RPC调用请求封装成Request
+- 网络传输，使用网络通信框架（Netty）,将封装的请求发送到对应的设备端口上，发送前需要序列化
+
+
+
+服务提供者
+
+- 网络传输，Server端监听端口，能够接收到服务消费者的请求，并进行反序列化
+- 信息交换，解析出封装的Request
+- 通信协议，根据规定通信协议解析出调用内容
+- （省去了消费者里的负载均衡层）
+- 动态代理，根据请求的接口，找到实现接口的类
 
 如果服务注册中心挂掉了，仍然可以通信，因为消费者会将服务提供则的信息拉取到消费者本地。
 
@@ -27,21 +45,29 @@ https://blog.csdn.net/ityouknow/article/details/100789012
 
 
 
-## 二 dubbo支持哪些通信协议？
+## 二 Dubbo支持哪些通信协议？
 
-**dubbo协议（默认）**：采用单一长连接，NIO异步通信，基于hessian作为序列化协议。适用于：传输数据量小（每次请求在 100kb 以内），但是并发量很高，及服务消费者机器数远大于服务提供者机器数的情况。
+**Dubbo协议（默认）**：采用单一长连接，NIO异步通信，基于hessian作为序列化协议。适用于：传输数据量小（每次请求在 100kb 以内），但是并发量很高，及服务消费者机器数远大于服务提供者机器数的情况。
 
 **其它**：rmi/hessian/http/webservice等。
 
 
 
-## 三 dubbo哪些序列化协议？
+## 三 Dubbo哪些序列化协议？
 
-dubbo实际基于不同的通信协议，支持hessian、java二进制序列化、json、SOAP文本序列化等，但是hessian是其默认的序列化协议。
+Dubbo实际基于不同的通信协议，支持hessian、java二进制序列化、json、SOAP文本序列化等，但是hessian是其默认的序列化协议。
 
 
 
-## 四 dubbo支持哪些负载均衡策略？
+## 四 Dubbo网络传输通信原理？
+
+基于Netty
+
+服务提供者，创建ServerSocketChannel监听对应端口号。Selector轮询ServerSocketChannel，如果有服务消费者需要创建连接时，会创建一个SocketChannel，服务消费者与SocketChannel一一对应。使用多个线程去处理服务消费者的请求，每个线程会对应一个Selector。Selector去轮询查看多个SocketChannel，当存在服务消费者有请求需要处理时，会启动线程进行处理。
+
+线程处理即对应Dubbo服务提供者处理流程。
+
+## 四 Dubbo支持哪些负载均衡策略？
 
 Dubbo内置了4种负载均衡策略:
 
@@ -52,7 +78,7 @@ Dubbo内置了4种负载均衡策略:
 
 
 
-## 五 dubbo支持哪些集群容错策略？
+## 五 Dubbo支持哪些集群容错策略？
 
 Dubbo主要内置了如下几种策略：
 
@@ -82,7 +108,7 @@ Failback策略中，如果调用失败，则此次失败相当于`Failsafe`，�
 
 
 
-## 六 dubbo支持哪些服务路由？
+## 六 Dubbo支持哪些服务路由？
 
 服务路由包含一条路由规则，路由规则决定了服务消费者的调用目标，即规定了服务消费者可调用哪些服务提供者。
 
@@ -90,11 +116,11 @@ Dubbo 提供了三种服务路由实现，分别为条件路由 ConditionRouter�
 
 
 
-## 七 dubbo的SPI机制是什么？
+## 七 Dubbo的SPI机制是什么？
 
 **是什么**
 
-SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的本质是将接口实现类的全限定名配置在文件META-INF/services中，并由服务加载器读取配置文件，加载实现类。这样可以在运行时，动态为接口替换实现类。
+SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的本质是将接口实现类的全限定名配置在文件META-INF/services中，并由服务加载器读取配置文件，加载自定义实现类。这样可以在运行时，动态为接口替换实现类。因此，能够通过SPI机制扩展Dubbo组件。
 
 **应用场景**
 
@@ -102,11 +128,11 @@ SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的
 
 比如：Java中的JDBC接口，Java中并没有提供实际的实现类。在项目运行时，依据使用到的数据库类型，引入对应jar，如MySQL为mysql-jdbc-connector.jar。
 
-比如：dubbo中的协议扩展、负载均衡扩展、注册中心扩展等。
+比如：Dubbo中的协议扩展、负载均衡扩展、注册中心扩展等。
 
 
 
-## 八 dubbo如何进行服务治理，服务降级？
+## 八 Dubbo如何进行服务治理，服务降级？
 
 **服务治理**
 
@@ -130,17 +156,17 @@ SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的
 <dubbo:reference id="xxxService" interface="com.x..service.xxxxService" check="true" async="false" retries="3" timeout="2000" mock="return false" />
 ```
 
-可以通过配置接口重试次数或者超时时间，出现问题后进行服务降级dubbo提供了mock配置，可以返回固定值或者自定义mock业务处理类进行返回。
+可以通过配置接口重试次数或者超时时间，出现问题后进行服务降级Dubbo提供了mock配置，可以返回固定值或者自定义mock业务处理类进行返回。
 
 
 
-## 九 如何设计一个类似dubbo的RPC框架？
+## 九 如何设计一个类似Dubbo的RPC框架？
 
-依据dubbo的工作原理进行设计
+依据Dubbo的工作原理进行设计
 
-1）可以zookeeper来做服务注册中心
+1）可以使用Zookeeper来做服务注册中心
 
-2）消费者如何去注册中心拿服务提供者信息？
+2）消费者如何去服务注册中心获取服务提供者信息？可以主动拉取，或者基于Zookeeper注册监听后通知
 
 3）消费者如何发起服务请求？基于动态代理，调用的接口对应一个代理，代理能够找到服务提供者对应的地址
 
@@ -150,13 +176,13 @@ SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的
 
 6）服务提供者如何接收请求？接收到如何处理？通过监听，接收到对应请求后，反序列化，然后进行处理
 
-（也可以包含其它dubbo包含的特性SPI、服务治理等）
+（也可以包含其它Dubbo包含的特性SPI、服务治理等）
 
 
 
+## 参考
 
-
-
+- [Dubbo官方文档](http://dubbo.apache.org/zh-cn/docs/)
 
 
 
