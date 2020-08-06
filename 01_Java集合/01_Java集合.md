@@ -11,7 +11,7 @@
 
 ![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/01/01_01.png)
 
-### 二 LIst
+### 二 List
 
 #### 1. ArrayList与LinkedList
 
@@ -29,7 +29,7 @@
 
 - 在每次添加元素的时候，都会先调用ensureExplicitCapacity()方法，去判断elementData中容量，当容量不够时，调用grow()方法，去增大容量，首先通过 oldCapacity + (oldCapacity >> 1) 增大为elementData中原有容量的1.5倍，若容量仍然不够，则直接扩充至请求的容量。这样可以保证elementData每次都接近实际size的大小。
 
-- 扩容后，会调用 Arrays.copyOf()方法，将元素移动至新的数组中，所以每次使用ArrayList添加元素时，因此添加元素时会慢一些；同时在remove()时，也会去移动元素。Arrays.copyOf()实现是调用System.arraycopy()方法。
+- 扩容后，会调用 Arrays.copyOf()方法，将元素移动至新的数组中，所以每次使用ArrayList添加元素时，如果每次都需要扩容将会慢一些；同时在remove()时，也会去移动元素。Arrays.copyOf()实现是调用System.arraycopy()方法。
 
 - 删除元素时，不会调整数组容量。
 
