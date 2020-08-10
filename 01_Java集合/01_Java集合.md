@@ -216,7 +216,7 @@ return (key == null) ? 0 : (h = key.hashCode())^(h >>> 16)
 
 ##### 1.10 说说对红黑树的理解？
 
-红黑树是一种自平衡二叉查找树，在进行插入和删除操作时通过左旋、右旋、变色保持二叉查找树的平衡，从而获得较高的查找性能，可以在O(log n)时间内做查找，插入和删除，具备如下特点。
+红黑树是一种自平衡二叉查找树，在进行插入和删除操作时通过左旋、右旋、变色保持二叉查找树的平衡，从而获得较高的查找性能，可以在O(logn)时间内做查找，插入和删除，具备如下特点。
 
 - 每个节点要么是黑色，要么是红色
 
@@ -244,9 +244,9 @@ Java8中已经优化，resize时，使用两个链表，都是尾插法。
 
 ##### 1.12  HashMap和HashTable有什么区别？
 
-- HashMap是支持null键和null值的，而HashTable在遇到null时，会抛出NullPointerException异常。HashMap中，key为null时，计算所得Hashcode为0。
+- HashMap是支持null键和null值的，而HashTable在遇到null时，会抛出NullPointerException异常。HashMap中，key为null时，计算所得hashcode为0。
 - 默认容量，扩容不同。Hashtable默认的初始大小为11，之后每次扩充为原来的2n+1。HashMap默认的初始化大小为16，之后每次扩充为原来的2倍。
-- Hashtable是线程安全的，HashMap不是。Hashtable中方法采用synchronized修饰。Hashtable会慢些。
+- Hashtable是线程安全的，HashMap不是。Hashtable中方法采用Synchronized修饰。Hashtable会慢些。
 - HashTable为数组+链表组成，HashMap在Java8后，数组+链表+红黑树
 
 
@@ -265,8 +265,8 @@ HashMap中键值均可以为null值。
 
 ##### 1.14 在多线程的场景，可以使用哪几种方式去代替HashMap，来保证线程安全？
 
-- 使用Collections.synchronizedMap(Map)创建线程安全的map集合（外层套一个synchronized）
-- Hashtable（对数据操作的时候都会通过synchronized进行同步）
+- 使用Collections.synchronizedMap(Map)创建线程安全的map集合（外层套一个Synchronized）
+- Hashtable（对数据操作的时候都会通过Synchronized进行同步）
 - ConcurrentHashMap
 
 ##### 1.15 总结
@@ -282,7 +282,7 @@ HashMap是在时间和空间利用上进行平衡优化。
 相比于Java7，Java8中有了较大改变
 
 - ConcurrentHashMap，key和value均不能为null，会抛空指针异常，HashMap中当key值为null，设定hash为null
-- Java7中采用分段锁，将整个大数组划分为多个小段，每个小段对应一个锁，进行分段加锁；Java8中，进行了锁粒度的细化，锁为每个数组中元素，采用了 CAS + synchronized来保证并发安全性。
+- Java7中采用分段锁，将整个大数组划分为多个小段，每个小段对应一个锁，进行分段加锁；Java8中，进行了锁粒度的细化，锁为每个数组中元素，采用了 CAS + Synchronized来保证并发安全性。
 
   
 
@@ -290,10 +290,10 @@ HashMap是在时间和空间利用上进行平衡优化。
 
 - 若第一次table为null，先初始化一个默认容量为16的数组table。若不为null，根据(n - 1) & hash计算数组下标，若table[i]不存在元素为null时，不需要加锁，直接通过CAS写入元素，同时刻只有一个线程能够写入成功
 - 若table[i]存在元素，根据table[i]的hash值判断是否正在扩容，若在扩容，协助扩容
-- 若不在扩容，使用synchronized同步，锁为table[i]元素，根据table[i]判断是进行链表还是树方式进行节点插入（因为转化为树后节点hash值为负数）。（锁的选择进行了优化）
+- 若不在扩容，使用Synchronized同步，锁为table[i]元素，根据table[i]判断是进行链表还是树方式进行节点插入（因为转化为树后节点hash值为负数）。（锁的选择进行了优化）
 - 插入完成后，如果链表节点数为8个，将链表转化为红黑树
 
-因此，如果多个线程对同一个位置元素进行处理，才会使用synchronized加锁，否则是可以多线程同时操作。
+因此，如果多个线程对同一个位置元素进行处理，才会使用Synchronized加锁，否则是可以多线程同时操作。
 
 
 
@@ -322,7 +322,7 @@ HashMap是在时间和空间利用上进行平衡优化。
 
 因为集合在遍历时，直接访问内部数据，为了防止在遍历时，被修改，使用变量modCount来记录已修改次数。迭代器每次的hasNext()和next()方法都会检查该modCount是否被改变，当检测到被修改时，抛出ConcurrentModificationException。
 
-java.util包下的集合均是快速失败，ava.util.concurrent包下的容器，均为fail-safe安全失败。
+java.util包下的集合均是快速失败，java.util.concurrent包下的容器，均为fail-safe安全失败。
 
 **fail-safe**是指遍历时取得的数据均为原始数据的拷贝，即使原集合发生改变，也不会影响当前遍历。
 
