@@ -10,17 +10,15 @@
 
 多线程编程中，可能出现多个线程同时访问同一个共享、可变的资源（共享：多个线程能够同时访问；可变，资源能够被修改）。
 
-多线程执行过程中，由于CPU时间片的轮转，线程执行过程并不完全可控，导致期望结果与实际不符，带来线程不安全，如果都能表现出正确地结果，那么即是线程安全。
+多线程执行过程中，由于CPU时间片的轮转，线程执行过程并不完全可控，导致期望结果与实际不符，带来线程不安全，如果都能表现出正确结果，即是线程安全。
 
 其根源是由于计算机性能提升带来的内存可见性问题，原子性问题和有序性问题。
 
 为了保证线程安全，需要保证线程同步，有序处理。
 
-（下面为扩展）
+Java中同步控制器包含Synchronized和AQS。
 
-Java中同步控制器包含synchronized和AQS。
-
-- synchronized，基于JVM底层实现，不可控
+- Synchronized，基于JVM底层实现，不可控
 - AQS，通过自旋、CAS、阻塞，实现的机制
 
 
@@ -37,13 +35,13 @@ Java内存模型其实就是规定了工作内存与主内存交换数据的方�
 
 主内存是虚拟机内存中的一部分，可对应于Java堆中的对象实例数据部分。
 
-![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_01.PNG)
+![主内存](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_01.PNG)
 
 #### 2.2 工作内存与主内存数据如何交互？
 
 主要是通过6个指令，read、load、use、assign、store、write，和遵从缓存一致性协议，及CPU嗅探机制等。
 
-![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_02.PNG)
+![工作内存与主内存交互](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_02.PNG)
 
 
 
@@ -74,7 +72,7 @@ Java内存模型其实就是规定了工作内存与主内存交换数据的方�
 
 通常所说的工作内存，包含寄存器、写缓冲器，高速缓存。
 
-![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_11.PNG)
+![工作内存](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_11.PNG)
 
 **写缓冲器**
 
@@ -104,7 +102,7 @@ CPU访问内存时，会通过内存地址解码的三个数据：index（桶编
 
 根据这个内存地址的解码结果，如果高速缓存子系统能够找到相应的缓存行并且缓存行所在的缓存条目的Flag表示相应缓存条目是有效的， 那么就是缓存命中；否则，就是缓存未命中。如果缓存命中直接从缓存中读取数据返回，如果缓存未命中，需要从主内存中读取，存入缓存中，再返回。
 
-![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_13.PNG)
+![高速缓存](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_13.PNG)
 
 
 
@@ -317,7 +315,7 @@ Java规范中规定对变量的写操作都是原子的。
 
 #### 2.15 volatile使用于哪些场景？
 
-​		共享变量，多个线程，有的线程会去读取、有的线程会去写入，此时需要使用volatile修饰该变量，保证可见性与有序性。比如对标志的读取和修改。
+		共享变量，多个线程，有的线程会去读取、有的线程会去写入，此时需要使用volatile修饰该变量，保证可见性与有序性。比如对标志的读取和修改。
 
 
 
@@ -382,7 +380,7 @@ OOP指普通对象指针，Klass是C++中对等于Java中的对象。
 
 #### 4.2 Java中的线程？
 
-​	Java中的线程创建依赖于系统内核，创建线程时JVM会调用系统库去创建内核线程，一条Java线程会映射到一条系统的轻量级进程上（指通常说的线程），1对1。
+	Java中的线程创建依赖于系统内核，创建线程时JVM会调用系统库去创建内核线程，一条Java线程会映射到一条系统的轻量级进程上（指通常说的线程），1对1。
 
 ![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_10.PNG)
 
@@ -706,7 +704,7 @@ CachedThreadPool 为SynchronousQueue
 - 自旋，控制线程在自己范围内，
 - LockSupport的park/unpark，避免线程一直自旋空跑，通过park/unpark使线程根据需要阻塞和唤醒
 
-**采用了模板方法模式**，AQS为抽象类，使用者需要重新AQS中的指定方法，主要是对同步状态state获取和释放，来适配锁的模式。而AQS中的模板方法会去调用使用者重写的那些方法。然后使用者再调用那些模板方法来构建锁。
+**采用了模板方法模式**，AQS为抽象类，使用者需要重写AQS中的指定方法（tryAcquire、tryRelease等），主要是对同步状态state获取和释放，来适配锁的模式。而AQS中的模板方法会去调用使用者重写的那些方法。然后使用者再调用那些模板方法来构建锁。
 
 ***第二步***  存放阻塞线程的队列
 
@@ -742,9 +740,9 @@ AQS用于存放管理阻塞线程的队列，该队列是基于CLH变种的队�
 
 在CountDownLatch中，为共享模式，初始化时设置了需要等待执行完成的线程个数Count，会将该值赋值给AQS中的state。当调用线程调用await()方法阻塞等待所有线程完成时，当某个线程执行countDown方法，state值会减1，直到state为0，主线程会被唤醒从await()方法返回，从而能够继续执行。
 
-在阻塞队列ArrayBlockingQueue中，即通过该种方式实现。在阻塞队列中通过notFull和notEmpty两个条件
+在阻塞队列ArrayBlockingQueue中，即通过该种方式实现。在阻塞队列中通过notFull和notEmpty两个条件，
 
-。当元素插入阻塞队列时，队列满了，元素将进入等待条件为notFull的等待队列，等待被唤醒；当有线程去获取元素时，取出元素后，会再调用notFull.signal()方法，去唤醒等待条件为notFull的等待队列中元素，因此元素又可以被插入了。notEmpty同理。
+当元素插入阻塞队列时，队列满了，元素将进入等待条件为notFull的等待队列，等待被唤醒；当有线程去获取元素时，取出元素后，会再调用notFull.signal()方法，去唤醒等待条件为notFull的等待队列中元素，因此元素又可以被插入了。notEmpty同理。
 
 
 
@@ -753,6 +751,45 @@ AQS用于存放管理阻塞线程的队列，该队列是基于CLH变种的队�
 Java中可以采用`wait()/notify()`方法实现等待通知机制，同样也可以采用`await()/signal()`方法实现。`await()/signal()`是AQS中提供的方法。
 
 线程在获取到锁lock后，可通过调用condition.await()方法进入等待队列，被阻塞，并释放锁lock。其它线程竞争到锁，执行完操作后，可以调用condition.await()方法也进入等待队列。每一个等待condition都对应一个等待队列，AQS中同步队列只有一个，等待队列可以有多个。当某个线程在获取到锁lock后，调用condition.signal()方法，会将等待队列中首节点，移动到同步队列。此时，同步队列中元素可以去竞争锁。
+
+
+
+#### 6.3 LockSupport工具类中park和unpark?
+
+LockSupport类与每个使用它的线程都会关联一个许可证，调用park方法会使当前线程阻塞，调用unpark(thread)，传入当前线程参数能够唤醒。LockSupport用作是创建锁（AQS）和其他同步类的基础。
+
+```java
+public static void main(String[] args) throws InterruptedException {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("child thread begin park!");
+                // 挂起自己
+                LockSupport.park();
+                System.out.println("child thread unpark!");
+            }
+        });
+        thread.start();
+        // 确保调用unpark前子线程已经将自己挂起
+        Thread.sleep(1000);
+        System.out.println("main thread begin unpark!");
+        LockSupport.unpark(thread);
+    }
+```
+
+子线程将自己挂起，主线程中调用了unpark方法使得子线程得以继续运行。如果在park()之前执行了unpark()会怎样？线程不会被阻塞，直接跳过park()，继续执行后续内容。
+
+**Thread.sleep()和LockSupport.park()的区别**
+
+1）Thread.sleep()和LockSupport.park()方法类似，都是阻塞当前线程的执行，且都不会释放当前线程占有的锁资源；
+
+2）Thread.sleep()无法从外部唤醒，只能自己醒过来；LockSupport.park()方法可以被另一个线程调用；LockSupport.unpark()方法唤醒。
+
+**Object.wait()和LockSupport.park()的区别**
+
+1）Object.wait()方法需要在Synchronized块中执行；LockSupport.park()可以在任意地方执行；
+
+2）Object.wait()会释放占有的锁；LockSupport.park()不会释放当前线程占有的锁资源。
 
 
 
@@ -778,7 +815,7 @@ Java中可以采用`wait()/notify()`方法实现等待通知机制，同样也�
 
 并发包中的ReentrantLock默认为非公平锁
 
-Synchronize为非公平锁
+Synchronized为非公平锁
 
 #### 7.2 何为可重入锁？
 
@@ -887,7 +924,8 @@ public class SpinLock
         for (int i = 0; i < 5; i++) {
             new Thread(new Runnable() {
                 @Override
-                public void run() {                    System.out.println(Thread.currentThread().getName());
+                public void run() {     
+                    System.out.println(Thread.currentThread().getName());
                     countDownLatch.countDown();
                 }
             }, "thread " + i).start();
@@ -904,7 +942,7 @@ public class SpinLock
 
 #### 8.2 CyclicBarrier 栅栏
 
-**定义**，可循环的屏障。让一组线程都达到一个屏障（也可称同步点）时被阻塞，直到最好一个线程到达屏障时，屏障会被打开，所有线程才能继续执行，线程进入屏障通过await()方法。
+**定义**，可循环的屏障。让一组线程都达到一个屏障（也可称同步点）时被阻塞，直到最后一个线程到达屏障时，屏障会被打开，所有线程才能继续执行，线程进入屏障通过await()方法。
 
 构造方法时能够传入barrierAction，用于在线程到达屏障时，优先执行barrierAction，然后被屏障阻塞线程再执行。
 
@@ -997,7 +1035,7 @@ Semaphore 通过acquire()能够获取一个许可，release()释放一个许可�
 
 阻塞时，线程会被挂起，条件满足，挂起线程又会被唤醒。
 
-为什么需要？有了阻塞队列，不需要认为去控制线程的阻塞和挂起，比较方便。
+为什么需要？有了阻塞队列，不需要人为去控制线程的阻塞和挂起，比较方便。
 
 #### 9.3 常用阻塞队列
 
@@ -1082,7 +1120,7 @@ public static void testSynchronousQueue() {
 
 ```java
 /**
- * 题目：一个初始值为0的变量，两个线程不断进行+1  -，进行5轮
+ * 题目：一个初始值为0的变量，两个线程不断进行+1  -1，进行5轮
  */
 public class TestProConsumer {
     public static void main(String[] args) {
@@ -1387,9 +1425,9 @@ Java1.6以后对synchronized进行了优化。
 
 Synchronized是关键字，属于JVM层面
 
-​	monitorenter(底层通过monitor对象完成，wait和notify也依赖于monitor实现，需要在同步代码块中调用)
-
-​	monitorexit
+	monitorenter(底层通过monitor对象完成，wait和notify也依赖于monitor实现，需要在同步代码块中调用)
+	
+	monitorexit
 
 Lock是API层面的锁
 
@@ -1526,15 +1564,35 @@ class CyclicPrint {
 
 死锁是指两个或两个以上的线程在执行过程中，因争夺资源而互相等待的线程，若无外力干涉，他们将一直持续下去。
 
-![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_06.PNG)
+![死锁](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_06.PNG)
 
 **主要原因**
 
-- 系统资源不足
+- 系统资源不足（如共享文件时引起死锁）
 - 程序执行顺序不合适
 - 资源分配不当
 
-**死锁示例**
+#### 11.2 死锁产生的四个必要条件？
+
+- 互斥条件
+
+  当前资源同一时间只能由一个线程占有，若其它线程请求获取，将会进入等待
+
+- 不可剥夺条件
+
+  线程在占有资源时间内，不能被其它线程剥夺
+
+- 请求与保持条件
+
+  线程已经拥有资源，同时再去请求其它资源，而该资源已被其它线程占有，因此陷入阻塞状态
+
+- 循环等待条件
+
+  多个线程形成一种头尾相连的循环等待资源的关系
+
+以上这四个条件是死锁的必要条件，只要系统发生死锁，这些条件必然成立，而只要上述条件之一不满足，就不会发生死锁。
+
+#### 11.3 手写死锁示例代码
 
 ```java
 public class TestDeadLock {
@@ -1816,4 +1874,3 @@ synchronized通过加锁，一次只能有一个线程访问，能够保证一�
 #### 12.8 基于CAS，有哪些典型应用？
 
 原子类AtomicInteger、AQS、ConcurrentHashMap中向tab[i]中插入元素时
-
