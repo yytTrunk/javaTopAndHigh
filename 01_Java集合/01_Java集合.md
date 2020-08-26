@@ -136,7 +136,7 @@ Java7中的hash算法会引起Hash Collision DoS （Hash碰撞的拒绝式服务
 
 Java8中会将计算的hashcode值，与右移16位后的值进行异或，得到一个32位的值。
 
-相比于Java7中的取模运算，修改为按位与，计算性能更高。
+相比于Java7中的取模运算，修改为异或，计算性能更高。
 
 同时优化了计算方法方法
 
@@ -328,4 +328,6 @@ java.util包下的集合均是快速失败，ava.util.concurrent包下的容器�
 
 - 方法1，使用迭代器Iterator中remove方法，删除当前遍历到的元素
 - 方法2，使用CopyOnWriteArrayList
+
+
 
