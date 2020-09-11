@@ -40,7 +40,7 @@ Spring中Bean的创建，主要有四种方式
 
 ```java
 <bean class="com.ttsummer.testSpring">
-	<constructor-arg name="name" type="java.lang.String" value="luban"/>
+	<constructor-arg name="name" type="java.lang.String" value="tttt"/>
     <constructor-arg index="1" type="java.lang.String" value="sex" />
 </bean>
 ```
@@ -73,7 +73,7 @@ Bean对象生命周期包含创建、初始化、销毁。可以通过配置参�
 - destroy-method ，容器销毁前执行
 
 ```java
-<bean class="com.tuling.spring.HelloSpring" init-method="init" destroy-method="destroy"></bean>
+<bean class="com.ttsummer.spring.HelloSpring" init-method="init" destroy-method="destroy"></bean>
 ```
 
 ### 1.5 Bean的加载机制？
@@ -146,7 +146,7 @@ ioc 实现中xml 中描述的Bean信息都将保存至BeanDefinition 对象中�
 
 2. 将bean的id和name参数，通过BeanDefinitionRegistry进行注册，
 
- xml中bean的id 和name属性没有包含在BeanDefinition 中，将ID 作为当前Bean的存储key注册到了BeanDefinitionRegistry 注册器中，name 作为别名key 注册到了 AliasRegistry 注册中心。其最后都是指向其对应的BeanDefinition，存在ConcurrentHashMap中。
+ xml中bean的id和name属性没有包含在BeanDefinition中，将ID 作为当前Bean的存储key注册到了BeanDefinitionRegistry 注册器中，name作为别名key 注册到了 AliasRegistry 注册中心。其最后都是指向其对应的BeanDefinition，存在ConcurrentHashMap中。
 
 **谁来主导读取并装载Bean**(BeanDefinitionReader)
 
@@ -255,4 +255,4 @@ ApplicationContext扩展了如下功能
 
 单例Bean存在线程安全问题，对该对象中的非静态成员变量，进行并发写操作会存在线程安全问题。所以，通常不会在实例中声明变量，而是多个service互相调用，然后直接去并发访问数据库。
 
-#### 
+
