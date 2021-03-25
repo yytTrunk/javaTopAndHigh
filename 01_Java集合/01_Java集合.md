@@ -44,7 +44,7 @@
 ##### 1.4 ArrayList与LinkedList对比，有什么异同
 
 - ArrayList基于数组实现，内存连续；LinkedList基于双向链表实现，可以不连续，因此内存利用率更高；
-- ArrayList随机访问效率更高；LinkedList随机相·对效率低，查找或删除元素时需要从头或者尾节点，一个个遍历下去。
+- ArrayList随机访问效率更高；LinkedList随机相对效率低，查找或删除元素时需要从头或者尾节点，一个个遍历下去。
 - LinkedList批量插入快，只用找到指定位置，再改变前后索引即可。ArrayList需要移动其它元素至新的数组中；
 - 若要进行大量的随机访问，使用ArrayList；如果要经常从表中插入或删除元素，可以使用LinkedList。
 - 两者都不是线程安全
@@ -336,7 +336,7 @@ java.util包下的集合均是快速失败，java.util.concurrent包下的容器
 ##### 5.2 如何在遍历的同时删除ArrayList中的元素?
 
 - 方法1，使用迭代器Iterator中remove方法，删除当前遍历到的元素
-- 方法2，使用CopyOnWriteArrayList
+- 方法2，使用CopyOnWriteArrayList，因为会拷贝一份数据
 
 
 
