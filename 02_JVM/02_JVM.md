@@ -52,6 +52,8 @@
 
 在Java8中，元空间使用的内存为直接内存，是物理内存，为JVM占用的内存以外的本地内存。
 
+元空间带下，默认为20M
+
 - 程序计数器
 
 线程私有，用于记录当前线程代码（指字节码）执行位置。
@@ -147,9 +149,10 @@
 
 **类加载器分类**
 
-- 启动类加载器（Bootstrap ClassLoader），加载Java核心类，主要为/jre/lib/rt.jar等
+- 启动类加载器（Bootstrap ClassLoader），加载Java核心类，主要为/jre/lib/rt.jar、resources.jar等
 - 扩展类加载器（Extension ClassLoader），在Java9改为平台类加载器（Platform ClassLoader）。加载一些扩展类，位于目录/jre/lib/ext/*.jar下jar等
 - 应用类加载器（Application ClassLoader），用户自定义的CLASSPATH路径下类
+- 用户自定义类加载器（User ClassLoader）,用户自定义类加载器
 
 **加载类时使用双亲委派模型，过程如下**
 
@@ -169,6 +172,8 @@
 
 可以通过继承ClassLoader类，重写findClass()方法，来自定义类加载器。
 
+当父类加载失败，会调用自己的findClass()方法来完成加载。
+
 通过自定义类加载器能够修改类加载的方法，隔离加载类等，从而避免类冲突。
 
 
@@ -185,7 +190,54 @@ new对象时实际过程
 
 
 
-#### 4.5 OGSI加载机制
+#### 4.5 为什么需要使用双亲委派模型
+
+- 避免类重复加载，当父类加载器加载过后，子类不会重复加载
+- 保证安全性，类加载器会去加载固定目录下，比如启动类加载器，加载jre/lib/目录下，这里类不会被随意窜改
+
+
+
+#### 4.6 双亲委派模型如何实现？
+
+双亲委派代码集中在java.lang.ClassLoader的loadClass()方法
+
+
+
+#### 4.7 loadClass()   findClass()  defineClass()区别
+
+- loadClass()，主要进行类加载方法，默认的双亲委派机制，在这里实现
+- findClass()，根据名称或位置加载.class文件
+- defineClass()，把字节码转化为Class
+
+
+
+#### 4.7 如何破坏双亲委派模型？
+
+双亲委派模型都是通过loadClass方法实现，想要破坏，可以通过自定义一个类加载器，重写其中loadClass方法，使其不进行双亲委派
+
+
+
+#### 4.8 为什么需要破坏双亲委派？
+
+1. JDNI、JDBC等需要加载SPI接口实现类
+
+2. 实现热插拔部署工具
+
+3. tomcat等web容器
+
+   tomcat需要部署多个web应用，多个应用可能是同个应用不同的版本，同时部署时，进行加载，可能会存在加载已经加载过的类，此时按照双亲委派模型，不能再进行加载，无法加载多个相同的类。
+
+   tomcat破坏双亲委派原则，提供隔离机制，为么给web容器单独提供一个webAppClassLoader加载器，可以加载本身目录下的class文件，加载不到时再交给CommonClassLoader加载。
+
+4. OSGI等模块化技术
+
+   加载器之间是不再是树状结构，而是网状结构。
+
+   JDK9中的模块化，将rt.java tool.jar拆分为数十个模块，编译时只编译实际用到的模块。
+
+
+
+#### 4.9 OGSI加载机制
 
 
 
@@ -458,7 +510,6 @@ Jvm参数主要是以XX开头
 - 统计信息监视工具（jstat）,能够实时对Java程序运行情况进行监视
 
   ```java
-  
   >jstat -gcutil -h3 19200 1000
     S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT
    95.62   0.00  75.39  88.32  68.93  77.04    154   15.233     4    0.333   15.566
