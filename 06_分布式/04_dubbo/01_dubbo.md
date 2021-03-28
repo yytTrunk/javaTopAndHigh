@@ -39,6 +39,8 @@
 
 如果服务注册中心挂掉了，仍然可以通信，因为消费者会将服务提供则的信息拉取到消费者本地。
 
+启动dubbo时，消费者会从zk拉取注册的生产者的地址接口等数据，缓存在本地。每次调用时，按照本地存储的地址进行调用;
+
 **参考**
 
 https://blog.csdn.net/ityouknow/article/details/100789012
@@ -47,15 +49,32 @@ https://blog.csdn.net/ityouknow/article/details/100789012
 
 ## 二 Dubbo支持哪些通信协议？
 
-**Dubbo协议（默认）**：采用单一长连接，NIO异步通信，基于hessian作为序列化协议。适用于：传输数据量小（每次请求在 100kb 以内），但是并发量很高，及服务消费者机器数远大于服务提供者机器数的情况。
+**Dubbo协议（默认）**：采用单一长连接，NIO异步通信，基于hessian作为序列化协议。
+
+长连接，一次建立连接，连续使用。
+
+如果使用短连接，每次请求都需要建立一次请求。
+
+适用于：传输数据量小（每次请求在 100kb 以内），但是并发量很高，及服务消费者机器数远大于服务提供者机器数的情况。
 
 **其它**：rmi/hessian/http/webservice等。
 
+- dubbo://（推荐）
+- rmi://
+- hessian://
+- http://
 
+http    hessian   rmi 采用短连接
 
 ## 三 Dubbo哪些序列化协议？
 
 Dubbo实际基于不同的通信协议，支持hessian、java二进制序列化、json、SOAP文本序列化等，但是hessian是其默认的序列化协议。
+
+hessian2序列化(默认推荐)：hessian是一种跨语言的高效二进制序列化方式。但这里实际不是原生的hessian2序列化，而是阿里修改过的hessian lite，它是dubbo RPC默认启用的序列化方式
+
+json序列化：目前有两种实现，一种是采用的阿里的fastjson库，另一种是采用dubbo中自己实现的简单json库，但其实现都不是特别成熟，而且json这种文本序列化性能一般不如上面两种二进制序列化。
+
+java序列化：主要是采用JDK自带的Java序列化实现，性能很不理想。
 
 
 
@@ -67,6 +86,8 @@ Dubbo实际基于不同的通信协议，支持hessian、java二进制序列化�
 
 线程处理即对应Dubbo服务提供者处理流程。
 
+
+
 ## 四 Dubbo支持哪些负载均衡策略？
 
 Dubbo内置了4种负载均衡策略:
@@ -76,7 +97,7 @@ Dubbo内置了4种负载均衡策略:
 3. LeastActiveLoadBalance:最少活跃调用数，相同活跃数的随机。活跃数指调用前后计数差。使慢的 Provider 收到更少请求，因为越慢的 Provider 的调用前后计数差会越大。
 4. ConsistentHashLoadBalance:一致性哈希负载均衡。相同参数的请求总是落在同一台机器上。
 
-
+可以调整机器权重，
 
 ## 五 Dubbo支持哪些集群容错策略？
 
@@ -122,11 +143,15 @@ Dubbo 提供了三种服务路由实现，分别为条件路由 ConditionRouter�
 
 SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的本质是将接口实现类的全限定名配置在文件META-INF/services中，并由服务加载器读取配置文件，加载自定义实现类。这样可以在运行时，动态为接口替换实现类。因此，能够通过SPI机制扩展Dubbo组件。
 
+比如，存在接口A，实现有A1, A2，A3
+
+但是代码理不存在接口A，但是在使用时，会将接口A对应的实现方法配置在META-INF/services中，然后让工程依赖于提供的服务Jar，在提供运行时，使用接口A时，会去扫描依赖的Jar包，寻找实现了的A方法。
+
 **应用场景**
 
 应用于插件扩展，新开发插件，接入到开源框架里，来扩展功能。
 
-比如：Java中的JDBC接口，Java中并没有提供实际的实现类。在项目运行时，依据使用到的数据库类型，引入对应jar，如MySQL为mysql-jdbc-connector.jar。
+比如：Java中定义了JDBC接口，Java中并没有提供实际的实现类。在项目运行时，依据使用到的数据库类型，引入对应jar，如MySQL为mysql-jdbc-connector.jar。
 
 比如：Dubbo中的协议扩展、负载均衡扩展、注册中心扩展等。
 
@@ -177,6 +202,14 @@ SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的
 6）服务提供者如何接收请求？接收到如何处理？通过监听，接收到对应请求后，反序列化，然后进行处理
 
 （也可以包含其它Dubbo包含的特性SPI、服务治理等）
+
+
+
+## 十 dubbo服务暴露过程
+
+- 首先将服务的实现封装成一个Invoker，Invoker中封装了服务的实现类。
+- 将Invoker封装成Exporter，并缓存起来，缓存里使用Invoker的url作为key。
+- 服务端Server启动，监听端口。（请求来到时，根据请求信息生成key，到缓存查找Exporter，就找到了Invoker，就可以完成调用。）
 
 
 
