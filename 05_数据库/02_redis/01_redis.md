@@ -1,5 +1,9 @@
 # redis
 
+[TOC]
+
+
+
 ## 一 为什么要用redis？
 
 redis(Remote Dictionary Server 远程字典服务器)。
@@ -94,7 +98,7 @@ CPU不是Redis的瓶颈，Redis的瓶颈最有可能是机器内存的大小或�
 
 redis支持两种方式的持久化，RDB和AOF。
 
-#### RDB（Redis DataBase）
+#### RDB(Redis DataBase）
 
 **采取方式**  定时将内存中的数据生成一份副本同步到硬盘上，该过程称为快照。默认保存在dump.rdb二进制文件中。采用N秒内有M个改动时，会生成快照。
 

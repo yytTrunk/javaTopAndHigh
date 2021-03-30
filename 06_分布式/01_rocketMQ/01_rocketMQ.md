@@ -154,6 +154,12 @@ rocketmq不管是推模式还是拉模式底层都是拉模式，推模式也是
 
 推模式中broker则需要知道哪些consumer拥有哪些topic和tags，但在consumer重启或更换topic时，broker无法及时获取信息，可能将消息推送到旧的consumer中。对应consumer主动获取topic，这样确保每次主动获取时他对应的topic信息都是最新的。
 
+
+
+PUSH模式：并不是broker主动向consumer推送消息，而是consumer向broker发送请求，保持长连接，每隔5s，会检测一次是否有消息，如果有消息，则将消息推送给consumer。（通常使用push）
+
+PULL模式：消费方consumer主动向broker拉取消息，一般是在本地使用定时任务实现，获取消息的及时性查，需要手动记录消息消费的偏移量
+
 ### 8.2 定时消息
 
 定时消息（延迟队列）是指消息发送到broker后，不会立即被消费，等待特定时间投递给真正的topic。 broker有配置项messageDelayLevel，默认值为“1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h”，18个level。可以配置自定义messageDelayLevel。注意，messageDelayLevel是broker的属性，不属于某个topic。发消息时，设置delayLevel等级即可：msg.setDelayLevel(level)。level有以下三种情况：
