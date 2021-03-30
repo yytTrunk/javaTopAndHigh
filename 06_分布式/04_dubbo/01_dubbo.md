@@ -208,8 +208,30 @@ SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的
 ## 十 dubbo服务暴露过程
 
 - 首先将服务的实现封装成一个Invoker，Invoker中封装了服务的实现类。
-- 将Invoker封装成Exporter，并缓存起来，缓存里使用Invoker的url作为key。
+
+- 将Invoker封装成Exporter，并缓存起来，缓存里使用Invoker的url作为key，存储到 DubboProtocol 的 exporterMap中
+
+- 将 URL 注册到注册中心，使得消费者可以获取服务
+
 - 服务端Server启动，监听端口。（请求来到时，根据请求信息生成key，到缓存查找Exporter，就找到了Invoker，就可以完成调用。）
+
+  
+
+https://aobing.blog.csdn.net/article/details/108345229
+
+
+
+
+
+## 十一 dubbo服务引用过程
+
+-  Invoker生成，创建代理对象
+
+
+
+
+
+https://aobing.blog.csdn.net/article/details/108461885
 
 
 
