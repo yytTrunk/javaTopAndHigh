@@ -243,13 +243,15 @@ return (key == null) ? 0 : (h = key.hashCode())^(h >>> 16)
 
 Java7中多线程情况，扩容时可能会出现环形链表，导致死循环。
 
+采用的头插法，会出现环形链表
+
 多线程情况可以使用ConcurrentHashMap解决。
 
-Java8中已经优化，resize时，使用两个链表，都是尾插法。
+Java8中已经优化，resize时，使用两个链表，都是尾插法。在遍历链表的过程中，使用尾插法(保证前后顺序)将链表分组插入到临时链表中，最后再将链表引用赋值到对应的数组空间中
 
 [疫苗：JAVA HASHMAP的死循环](https://coolshell.cn/articles/9606.html)
 
-
+[HashMap的ReHash图解](https://www.jianshu.com/p/13c650a25ed3)
 
 ##### 1.12  HashMap和HashTable有什么区别？
 
