@@ -148,6 +148,8 @@ ioc 实现中xml 中描述的Bean信息都将保存至BeanDefinition 对象中�
 
  xml中bean的id和name属性没有包含在BeanDefinition中，将ID 作为当前Bean的存储key注册到了BeanDefinitionRegistry 注册器中，name作为别名key 注册到了 AliasRegistry 注册中心。其最后都是指向其对应的BeanDefinition，存在ConcurrentHashMap中。
 
+![image-20210405235435721](.\img\04_01_06.png)
+
 **谁来主导读取并装载Bean**(BeanDefinitionReader)
 
 3. 通过BeanDefinitionReader(Bean定义读取器)，读取Bean
