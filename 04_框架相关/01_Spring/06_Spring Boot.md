@@ -135,25 +135,72 @@ public class Application {
 }
 ```
 
-### @SpringBootApplication注解
+分为两个部分
 
-SpringBootApplication注解作用，
+- 初始化方法
+
+1. 推断应用的类型是普通项目还是web项目
+2. 查找并加载所有可用初始化容器，设置到initializers属性中
+3. 找出所有应用程序的监听器，设置到Listeners属性中
+4. 推断并设置main方法定义类，找到运行的主类
+
+构造器
+
+```java
+ublic SpringApplication(ResourceLoader resourceLoader, Class... primarySources) {
+    // ......
+    this.webApplicationType = WebApplicationType.deduceFromClasspath();
+    this.setInitializers(this.getSpringFactoriesInstances();
+    this.setListeners(this.getSpringFactoriesInstances(ApplicationListener.class));
+    this.mainApplicationClass = this.deduceMainApplicationClass();
+}
+```
+
+- run方法流程
+
+![img](https://img2020.cnblogs.com/i-beta/1418974/202003/1418974-20200309184347408-1065424525.png)
 
 
 
-### SpringApplication.run(Application.class, args);
+1. 实例对象run
+2. 初始化监听器
+   1. 创建应用监听器，开始监听
+3. 读取环境配置参数
+4. 打印banner
 
 
 
 
 
 
+
+[狂神说Java](https://www.bilibili.com/video/BV1PE411i7CV?p=7)
+
+https://www.cnblogs.com/hellokuangshen/p/12450327.html
 
 ## 5. SpringBoot中自定义启动器
 
 
 
+
+
+
+
+
+
+
+
+
+
 ## 6. SpringBoot中注解
+
+
+
+
+
+
+
+
 
 
 
