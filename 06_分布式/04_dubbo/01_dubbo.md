@@ -47,6 +47,22 @@ https://blog.csdn.net/ityouknow/article/details/100789012
 
 
 
+分为两块：
+
+- 服务是如何暴露的
+
+
+
+
+
+- 服务时如何引用的
+
+  consumer从注册中心拉取服务提供信息，
+
+
+
+
+
 ## 二 Dubbo支持哪些通信协议？
 
 **Dubbo协议（默认）**：采用单一长连接，NIO异步通信，基于hessian作为序列化协议。
@@ -208,26 +224,42 @@ SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的
 ## 十 dubbo服务暴露过程
 
 - 首先将服务的实现封装成一个Invoker，Invoker中封装了服务的实现类。
-
 - 将Invoker封装成Exporter，并缓存起来，缓存里使用Invoker的url作为key，存储到 DubboProtocol 的 exporterMap中
-
 - 将 URL 注册到注册中心，使得消费者可以获取服务
-
 - 服务端Server启动，监听端口。（请求来到时，根据请求信息生成key，到缓存查找Exporter，就找到了Invoker，就可以完成调用。）
 
-  
+
+
+实际上就是将服务封装成一个对象存入全局Map中，然后启动一个Netty服务器监听消费者的消费。实际上就是将服务封装成一个对象存入全局Map中，然后启动一个Netty服务器监听消费者的消费。
+
+
+
+理解为Invoker就是一个执行体，一个Invoker对应一个接口，这个接口的方法就可以通过Invoker来执行，如DemoService的所有方法都可以通过这个Invoker来执行。
+
+总结
+
+服务暴露需要根据不同的协议去暴露，所以需要执行不同协议对象procotol实现类，每个procotol中有一个Map，key为服务的唯一标识，value为Exporter对象；Exporter对象可以调用getInvoker()得到这个服务的Invoker对象，得到了这个Invoker对象就可以执行具体服务的方法了。
 
 https://aobing.blog.csdn.net/article/details/108345229
 
-
-
-
-
 ## 十一 dubbo服务引用过程
 
--  Invoker生成，创建代理对象
+默认情况下，Dubbo 使用懒汉式引入服务，可配置。
 
 
+
+
+
+服务订阅 -> 服务转化成Invoker -> Transporter使用具体的Client启动服务准备连接 -> 使用Cluster并继续初始化Invoker -> 封装成一个代理返回。
+
+开始引用服务，调用ReferenceConfig的get方法引用服务，ReferenceConfig调用RegistryProtocol并使用具体的Registry（比如Zookeeper）来订阅服务，Registry会通知Directory开始引用服务（异步），也就是将要引用的服务转化成一个Invoker。Directory会使用具体的Protocol（如Dubbo）将引用的服务转化成一个Invoker。Invoker中使用Transporter来初始化一个具体的Client（比如Netty）用来准备和服务端提供者进行通信。RegistryProtocol调用Cluster的合并方法来初始化Invoker，然后ReferenceConfig在Invoker生成之后返回一个服务的代理。
+
+
+
+1. ReferenceConfig#init()初始化各种参数，然后调用createProxy()方法来创建代理对象
+2. 会判断调用的方式,服务的引入又分为了三种，第一种是本地引入、第二种是直接连接引入远程服务、第三种是通过注册中心引入远程服务。
+3. 无论是哪种方式，最终都是返回一个`Invoker`对象出来
+4. 封装好的 `invoker`再通过动态代理封装得到代理类
 
 
 
