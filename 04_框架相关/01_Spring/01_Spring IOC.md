@@ -253,8 +253,12 @@ ApplicationContext扩展了如下功能
 
 ### 1.12 Spring中的Bean是单例的吗？如果是单例如何保证线程安全？
 
+
 默认是单例，可以通过scope进行作用域配置。
 
-单例Bean存在线程安全问题，对该对象中的非静态成员变量，进行并发写操作会存在线程安全问题。所以，通常不会在实例中声明变量，而是多个service互相调用，然后直接去并发访问数据库。
+1. 在 `@Controller/@Service` 等容器中，默认情况下，scope值是单例-singleton的，也是线程不安全的。
+2. 尽量不要在`@Controller/@Service` 等容器中定义静态变量，不论是单例(singleton)还是多实例(prototype)他都是线程不安全的。
+3. 默认注入的Bean对象，在不设置`scope`的时候他也是线程不安全的。
+4. 一定要定义变量的话，用`ThreadLocal`来封装，这个是线程安全的。
 
 
