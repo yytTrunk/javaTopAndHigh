@@ -178,7 +178,11 @@
 
 当父类加载失败，会调用自己的findClass()方法来完成加载。
 
+读取class的字节流，采用defineClass进行加载
+
 通过自定义类加载器能够修改类加载的方法，隔离加载类等，从而避免类冲突。
+
+https://www.cnblogs.com/xrq730/p/4847337.html
 
 
 
