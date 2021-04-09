@@ -76,6 +76,111 @@ Bean对象生命周期包含创建、初始化、销毁。可以通过配置参�
 <bean class="com.ttsummer.spring.HelloSpring" init-method="init" destroy-method="destroy"></bean>
 ```
 
+- 创建阶段
+
+  1. Spring启动，查找并加载需要被Spring管理的bean，进行Bean的实例化
+  2. Bean实例化后对将Bean的引入和值注入到Bean的属性中
+  3. 如果Bean实现了BeanNameAware接口的话，Spring将Bean的Id传递给setBeanName()方法
+  4. 如果Bean实现了BeanFactoryAware接口的话，Spring将调用setBeanFactory()方法，将BeanFactory容器实例传入
+  5. 如果Bean实现了ApplicationContextAware接口的话，Spring将调用Bean的setApplicationContext()方法，将bean所在应用上下文引用传入进来。
+  6. 如果Bean实现了BeanPostProcessor接口，Spring就将调用他们的postProcessBeforeInitialization()方法。
+- 初始化阶段
+  1. 如果Bean 实现了InitializingBean接口，Spring将调用他们的afterPropertiesSet()方法。类似的，如果bean使用init-method声明了初始化方法，该方法也会被调用
+  2. 此时，Bean已经准备就绪，可以被应用程序使用了。他们将一直驻留在应用上下文中，直到应用上下文被销毁。
+
+- 销毁
+
+  
+
+#### 1. 实例化Bean
+
+对于BeanFactory容器，当客户向容器请求一个尚未初始化的bean时，或初始化bean的时候需要注入另一个尚未初始化的依赖时，容器就会调用createBean进行实例化。 
+对于ApplicationContext容器，当容器启动结束后，便实例化所有的bean。 
+容器通过获取BeanDefinition对象中的信息进行实例化。并且这一步仅仅是简单的实例化，并未进行依赖注入。 
+实例化对象被包装在BeanWrapper对象中，BeanWrapper提供了设置对象属性的接口，从而避免了使用反射机制设置属性。
+
+#### 2. 设置对象属性（依赖注入）
+
+实例化后的对象被封装在BeanWrapper对象中，并且此时对象仍然是一个原生的状态，并没有进行依赖注入。 
+紧接着，Spring根据BeanDefinition中的信息进行依赖注入。 
+并且通过BeanWrapper提供的设置属性的接口完成依赖注入。
+
+#### 3. 注入Aware接口
+
+紧接着，Spring会检测该对象是否实现了xxxAware接口，并将相关的xxxAware实例注入给bean。
+
+#### 4. BeanPostProcessor(前置、后置处理器)
+
+当经过上述几个步骤后，bean对象已经被正确构造，但如果你想要对象被使用前再进行一些自定义的处理，就可以通过BeanPostProcessor接口实现。 
+该接口提供了两个函数：
+
+- postProcessBeforeInitialzation( Object bean, String beanName ) 
+  当前正在初始化的bean对象会被传递进来，我们就可以对这个bean作任何处理。 
+  这个函数会先于InitialzationBean执行，因此称为前置处理。 
+  所有Aware接口的注入就是在这一步完成的。
+- postProcessAfterInitialzation( Object bean, String beanName ) 
+  当前正在初始化的bean对象会被传递进来，我们就可以对这个bean作任何处理。 
+  这个函数会在InitialzationBean完成后执行，因此称为后置处理。
+
+#### 5. InitializingBean与init-method
+
+当BeanPostProcessor的前置处理完成后就会进入本阶段。 
+InitializingBean接口只有一个函数：
+
+- afterPropertiesSet()
+
+这一阶段也可以在bean正式构造完成前增加我们自定义的逻辑，但它与前置处理不同，由于该函数并不会把当前bean对象传进来，因此在这一步没办法处理对象本身，只能增加一些额外的逻辑。 
+若要使用它，我们需要让bean实现该接口，并把要增加的逻辑写在该函数中。然后Spring会在前置处理完成后检测当前bean是否实现了该接口，并执行afterPropertiesSet函数。
+
+当然，Spring为了降低对客户代码的侵入性，给bean的配置提供了init-method属性，该属性指定了在这一阶段需要执行的函数名。Spring便会在初始化阶段执行我们设置的函数。init-method本质上仍然使用了InitializingBean接口。
+
+#### 6. DisposableBean和destroy-method
+
+和init-method一样，通过给destroy-method指定函数，就可以在bean销毁前执行指定的逻辑。
+
+
+
+#### 总结
+
+class文件 
+
+转化为BeanDefinition
+
+通过BeanFactory构建
+
+执行BeanFactoryPostProcessor，能够拿到beanFactory，来修改Bean
+
+然后是实例化Bean
+
+填充属性
+
+执行实现了Aware接口的方法
+
+初始化，执行BeanPostProcessor（前置，后置处理器）
+
+
+
+
+
+```
+Bean工厂后置处理器
+BeanFactoryPostProcessor
+Bean后置处理器
+BeanPostProcessor
+```
+
+
+
+
+
+[Spring Bean生命周期](https://www.bilibili.com/video/BV1KC4y1t7x4?p=3&spm_id_from=pageDriver)
+
+[深究Spring中Bean的生命周期](https://www.cnblogs.com/javazhiyin/p/10905294.html)
+
+[Spring中Bean的生命周期是怎样的？](https://www.zhihu.com/question/38597960)
+
+
+
 ### 1.5 Bean的加载机制？
 
 可以配置Bean的加载时间，设置属性lazy-init
@@ -119,7 +224,7 @@ Spring中如下四种方式
     </bean>
 ```
 byName：被注入bean的id名必须与set方法后半截匹配
-byType：查找所有的set方法，将符合符合参数类型的bean注入
+byType：查找所有的set方法，将符合参数类型的bean注入
 
 4. 通过注解（Autowired）
 

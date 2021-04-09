@@ -1,6 +1,6 @@
 # Spring总结
 
-###1. 谈谈对Spring的理解？
+### 1. 谈谈对Spring的理解？
 
 Spring核心，IOC（控制反转，依赖注入）和AOP。
 
