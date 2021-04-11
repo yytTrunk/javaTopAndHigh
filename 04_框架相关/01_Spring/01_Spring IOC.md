@@ -99,7 +99,7 @@ Bean对象生命周期包含创建、初始化、销毁。可以通过配置参�
 容器通过获取BeanDefinition对象中的信息进行实例化。并且这一步仅仅是简单的实例化，并未进行依赖注入。 
 实例化对象被包装在BeanWrapper对象中，BeanWrapper提供了设置对象属性的接口，从而避免了使用反射机制设置属性。
 
-#### 2. 设置对象属性（依赖注入）
+#### 2. 填充对象属性（依赖注入）
 
 实例化后的对象被封装在BeanWrapper对象中，并且此时对象仍然是一个原生的状态，并没有进行依赖注入。 
 紧接着，Spring根据BeanDefinition中的信息进行依赖注入。 
@@ -150,13 +150,15 @@ class文件
 
 执行BeanFactoryPostProcessor，能够拿到beanFactory，来修改Bean
 
-然后是实例化Bean
+然后是实例化Bean，（此时会提前曝光，将原始对象A放到一个map中）
 
-填充属性
+填充属性（可能会依赖于其它bean B，会构造一个其它bean B，但是bean可能会依赖于A，出现循环依赖，会从缓存中获取，查看是否存在A，存在A完成填充）
 
-执行实现了Aware接口的方法
+执行实现了Aware接口的方法，init
 
 初始化，执行BeanPostProcessor（前置，后置处理器）
+
+将对象放入单例池（singleObjects， beanNmae：bean对象）
 
 
 
@@ -181,7 +183,75 @@ BeanPostProcessor
 
 
 
-### 1.5 Bean的加载机制？
+
+
+### 1.5 Bean中的依赖关系是如何处理的？及如何处理循环依赖？
+
+循环依赖是指，对象A依赖于B，B依赖于C，C依赖于A，类似这样循环依赖。
+
+Spring在获取对象A时，通过提前曝光，会将A加入正在创建Bean的缓存中。在创建A过程中，发现依赖于，需要创建B，创建B时，又发现依赖于A，此时的A已经被提前曝光加入了正在创建的bean的缓存中，则无需创建新的的ClassA的实例，直接从缓存中获取即可。从而解决循环依赖问题。
+
+Spring只能解决Setter方法注入的单例bean之间的循环依赖
+
+
+
+主要通过二级，三级缓存来解决循环依赖。
+
+如果没有AOP，使用二级缓存即可解决循环依赖
+
+存在AOP，需要结合三级缓存来解决循环依赖。
+
+
+
+一级缓存：
+
+singletonObjects：缓存某个beanName对应的经过了完整生命周期的bean
+
+二级缓存：
+
+earlySingletonObjects：缓存提前拿原始对象进行了AOP之后得到的代理对象，原始对象还没有进行属性注入和后续的BeanPostProcessor等生命周期。
+
+只有出现了循环依赖，才会有值
+
+三级缓存：
+
+singletonFactories：缓存的是一个ObjectFactory，主要用来生成原始对象进行了AOP之后得到的代理对象，在每个Bean的生成过程中，会提前暴露一个工厂，没有出现循环依赖本bean，那个这个工厂不使用，本bean按照自己的生命周期执行，执行完成后把本bean放入一级缓存singletonObjects中。如果出现了循环依赖了本bean，则另外那个bean执行ObjectFactory提交到一个AOP之后的代理对象。如果无需AOP，则直接得到一个原始对象
+
+其它
+
+还存在一个缓冲earlyProxyReference，用来记录某个原始对象是否进行过了AOP
+
+
+
+#### 流程
+
+class文件 
+
+转化为BeanDefinition
+
+通过BeanFactory构建
+
+执行BeanFactoryPostProcessor，能够拿到beanFactory，来修改Bean
+
+然后是实例化Bean，（此时会提前曝光，将原始对象A放到一个map中）
+
+填充属性（可能会依赖于其它bean B，会构造一个其它bean B，但是bean可能会依赖于A，出现循环依赖，会从缓存中获取，查看是否存在A，存在A完成填充）
+
+执行实现了Aware接口的方法，init
+
+初始化，执行BeanPostProcessor（前置，后置处理器）
+
+将对象放入单例池（singleObjects， beanNmae：bean对象）
+
+
+
+
+
+
+
+
+
+### 1.6 Bean的加载机制？
 
 可以配置Bean的加载时间，设置属性lazy-init
 
@@ -189,7 +259,7 @@ BeanPostProcessor
 - false，非懒加载，容器启动时即创建对象，容器启动过程即可发现程序错误。
 - default，默认，采用default-lazy-init 中指定值，如果default-lazy-init  没指定就是false
 
-### 1.6 Bean的依赖注入（DI）？
+### 1.7 Bean的依赖注入（DI）？
 
 一个Bean依赖于另外一个Bean，传统可以通过外部传入，内部构建。
 
@@ -235,7 +305,7 @@ byType：查找所有的set方法，将符合参数类型的bean注入
 
 需要在xml文件中开启
 
-### 1.7 Bean是如何被构建的？
+### 1.8 Bean是如何被构建的？
 
 **一句话概括**
 
@@ -316,13 +386,15 @@ Bean创建时序图
 
 
 
-### 1.8 Bean中的依赖关系是如何处理的？及如何处理循环依赖？
 
-循环依赖是指，对象A依赖于B，B依赖于C，C依赖于A，类似这样循环依赖。
 
-Spring在获取对象A时，通过提前曝光，会将A加入正在创建Bean的缓存中。在创建A过程中，发现依赖于，需要创建B，创建B时，又发现依赖于A，此时的A已经被提前曝光加入了正在创建的bean的缓存中，则无需创建新的的ClassA的实例，直接从缓存中获取即可。从而解决循环依赖问题。
 
-Spring只能解决Setter方法注入的单例bean之间的循环依赖
+
+
+
+
+
+
 
 ### 1.9 Bean工厂BeanFactory与上下文ApplicationContext区别？
 
