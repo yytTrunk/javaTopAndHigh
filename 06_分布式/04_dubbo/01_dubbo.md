@@ -82,6 +82,8 @@ https://blog.csdn.net/ityouknow/article/details/100789012
 
 http    hessian   rmi 采用短连接
 
+
+
 ## 三 Dubbo哪些序列化协议？
 
 Dubbo实际基于不同的通信协议，支持hessian、java二进制序列化、json、SOAP文本序列化等，但是hessian是其默认的序列化协议。
@@ -114,6 +116,8 @@ Dubbo内置了4种负载均衡策略:
 4. ConsistentHashLoadBalance:一致性哈希负载均衡。相同参数的请求总是落在同一台机器上。
 
 可以调整机器权重，
+
+
 
 ## 五 Dubbo支持哪些集群容错策略？
 
