@@ -997,11 +997,136 @@ Mpsc 的全称是 Multi Producer Single Consumer，多生产者单消费者。Mp
 
 
 
+## 二十四 什么是select、poll、epoll？
+
+### select 
+
+时间复杂度O(n)
+
+有I/O事件发生了，却并不知道是哪那几个流（可能有一个，多个，甚至全部），我们只能无差别轮询所有流，找出能读出数据，或者写入数据的流，对他们进行操作。所以select具有O(n)的无差别轮询复杂度，同时处理的流越多，无差别轮询时间就越长。
+
+select本质上是通过设置或者检查存放fd标志位的数据结构来进行下一步处理。
+
+#### 实现
+
+
+
+#### 缺点
+
+**（1）每次调用select，都需要把fd集合从用户态拷贝到内核态，这个开销在fd很多时会很大**,select低效的另一个原因在于程序不知道哪些socket收到数据，只能一个个遍历。
+
+**（2）同时每次调用select都需要在内核遍历传递进来的所有fd，这个开销在fd很多时也很大**
+
+**（3）select支持的文件描述符数量太小了，默认是1024**
+
+### poll
+
+时间复杂度O(n)
+
+poll本质上和select没有区别，它将用户传入的数组拷贝到内核空间，然后查询每个fd（文件描述符）对应的设备状态，如果设备就绪则在设备等待队列中加入一项并继续遍历，如果遍历完所有fd后没有发现就绪设备，则挂起当前进程，直到设备就绪或者主动超时，被唤醒后它又要再次遍历fd
+
+大量的fd的数组被整体复制于用户态和内核地址空间之间，
+
+**poll没有最大文件描述符数量的限制**
+
+### epoll
+
+epoll可以理解为event poll，不同于忙轮询和无差别轮询，epoll会把哪个流发生了怎样的I/O事件通知我们。所以说epoll实际上是事件驱动（每个事件关联上fd）的。
+
+epoll有EPOLLLT和EPOLLET两种触发模式，LT是默认的模式，ET是“高速”模式。LT模式下，只要这个fd还有数据可读，每次 epoll_wait都会返回它的事件，提醒用户程序去操作，而在ET（边缘触发）模式中，它只会提示一次，直到下次再有数据流入之前都不会再提示了，无 论fd中是否还有数据可读。所以在ET模式下，read一个fd的时候一定要把它的buffer读光，也就是说一直读到read的返回值小于请求值，或者 遇到EAGAIN错误。还有一个特点是，epoll使用“事件”的就绪通知方式，通过epoll_ctl注册fd，一旦该fd就绪，内核就会采用类似callback的回调机制来激活该fd，epoll_wait便可以收到通知。
+
+#### 实现
+
+epoll提供了三个函数，epoll_create，epoll_ctl和epoll_wait，
+
+epoll_create是创建一个epoll句柄；
+
+epoll_ctl是将需要监视的socket添加到epfd中
+
+epoll_wait则是等待事件的产生。
+
+#### 流程
+
+**创建epoll对象**
+
+调用epoll_create方法时，内核会创建一个eventpoll对象（也就是程序中epfd所代表的对象）
+
+**维护监视列表**
+
+创建epoll对象后，可以用epoll_ctl添加或删除所要监听的socket。以添加socket为例，如下图，如果通过epoll_ctl添加sock1、sock2和sock3的监视，内核会将eventpoll添加到这三个socket的等待队列中。
+
+**添加所要监听的socket**
+
+当socket收到数据后，中断程序会操作eventpoll对象，而不是直接操作进程（也就是调用epoll的进程）。
+
+**接收数据**
+
+当socket收到数据后，中断程序会给eventpoll的“就绪列表”添加socket引用。
+
+给就绪列表添加引用
+
+eventpoll对象相当于是socket和进程之间的中介，socket的数据接收并不直接影响进程，而是通过改变eventpoll的就绪列表来改变进程状态。
+
+当程序执行到epoll_wait时，如果rdlist已经引用了socket，那么epoll_wait直接返回，如果rdlist为空，阻塞进程。
+
+**epoll_wait阻塞进程**
+
+当socket接收到数据，中断程序一方面修改rdlist，另一方面唤醒eventpoll等待队列中的进程，进程A再次进入运行状态（如下图）。也因为rdlist的存在，进程A可以知道哪些socket发生了变化。
 
 
 
 
-## 二十四 Netty中使用了哪些设计模式
+
+　　对于第一个缺点，epoll的解决方案在epoll_ctl函数中。每次注册新的事件到epoll句柄中时（在epoll_ctl中指定EPOLL_CTL_ADD），会把所有的fd拷贝进内核，而不是在epoll_wait的时候重复拷贝。epoll保证了每个fd在整个过程中只会拷贝一次。
+
+　　对于第二个缺点，epoll的解决方案不像select或poll一样每次都把current轮流加入fd对应的设备等待队列中，而只在epoll_ctl时把current挂一遍（这一遍必不可少）并为每个fd指定一个回调函数，当设备就绪，唤醒等待队列上的等待者时，就会调用这个回调函数，而这个回调函数会把就绪的fd加入一个就绪链表）。epoll_wait的工作实际上就是在这个就绪链表中查看有没有就绪的fd（利用schedule_timeout()实现睡一会，判断一会的效果，和select实现中的第7步是类似的）。
+
+　　对于第三个缺点，epoll没有这个限制，它所支持的FD上限是最大可以打开文件的数目，这个数字一般远大于2048,举个例子,在1GB内存的机器上大约是10万左右，具体数目可以cat /proc/sys/fs/file-max察看,一般来说这个数目和系统内存关系很大。
+
+
+
+#### epoll的优点
+
+1、没有最大并发连接的限制，能打开的FD的上限远大于1024（1G的内存上能监听约10万个端口）；
+2、效率提升，不是轮询的方式，不会随着FD数目的增加效率下降。只有活跃可用的FD才会调用callback函数；
+即Epoll最大的优点就在于它只管你“活跃”的连接，而跟连接总数无关，因此在实际的网络环境中，Epoll的效率就会远远高于select和poll。
+
+3、 内存拷贝，利用mmap()文件映射内存加速与内核空间的消息传递；即epoll使用mmap减少复制开销。
+
+**select，poll，epoll本质上都是同步I/O，因为他们都需要在读写事件就绪后自己负责进行读写，也就是说这个读写过程是阻塞的**，而异步I/O则无需自己负责进行读写，异步I/O的实现会负责把数据从内核拷贝到用户空间。 
+
+
+
+### 总结
+
+（1）select，poll实现需要自己不断轮询所有fd集合，直到设备就绪，期间可能要睡眠和唤醒多次交替。而epoll其实也需要调用epoll_wait不断轮询就绪链表，期间也可能多次睡眠和唤醒交替，但是它是设备就绪时，调用回调函数，把就绪fd放入就绪链表中，并唤醒在epoll_wait中进入睡眠的进程。虽然都要睡眠和交替，但是select和poll在“醒着”的时候要遍历整个fd集合，而epoll在“醒着”的时候只要判断一下就绪链表是否为空就行了，这节省了大量的CPU时间。这就是回调机制带来的性能提升。
+
+（2）select，poll每次调用都要把fd集合从用户态往内核态拷贝一次，并且要把current往设备等待队列中挂一次，而epoll只要一次拷贝，而且把current往等待队列上挂也只挂一次（在epoll_wait的开始，注意这里的等待队列并不是设备等待队列，只是一个epoll内部定义的等待队列）。这也能节省不少的开销。 
+
+
+
+Netty可以选择使用不同的多路复用技术。
+
+NioEventLoop底层会根据系统选择select或者epoll。如果是windows系统，则底层使用WindowsSelectorProvider（select）实现多路复用；如果是linux，则使用epoll。
+
+NioEventLoop在运行的时候，会不断的监听注册的连接，核心逻辑在doSelect方法中，主要的几个操作是
+（1）processUpdateQueue，将newKeys，updateKeys，cancelledKeys中的key更新到PollArrayWrapper中
+（2）subSelector.poll()，这里实际是调用native方法，会将PollArrayWrapper的fd拷贝至readFds/writeFds/exceptFds，并监听这些fd。
+（3）updateSelectedKeys，遍历freadFds/writeFds/exceptFds，将就绪的fd存储到selectedKey中
+
+当存在fd就绪后，doSelect方法返回，应用程序可以遍历selectedKey进行处理。
+
+
+
+### 参考
+
+https://zhuanlan.zhihu.com/p/63179839
+
+https://blog.csdn.net/songchuwang1868/article/details/89877739
+
+https://www.cnblogs.com/aspirant/p/9166944.html
+
+## 二十五 Netty中使用了哪些设计模式
 
 ### 单例模式
 
