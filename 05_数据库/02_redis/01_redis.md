@@ -44,7 +44,180 @@ redis(Remote Dictionary Server 远程字典服务器)。
 
 ![redis数据结构](.\img\02_01.PNG)
 
+#### String底层原理
 
+> ​	底层实现没有采用C语言的字符串类型
+>
+> 定义了新的数据结构，SDS即*Simple Dynamic String* ，是一种动态字符串
+>
+> ```c
+> struct sdshdr{
+> int len;/*字符串长度*/
+> int free;/*未使用的字节长度*/
+> char buf[];/*保存字符串的字节数组*/
+> }
+> ```
+>
+> - C语言获取字符串长度是从头到尾遍历，时间复杂度是O(n)，而SDS有len属性记录字符串长度，时间复杂度为O(1)。
+> - 避免缓冲区溢出。SDS在需要修改时，会先检查空间是否满足大小，如果不满足，则先扩展至所需大小再进行修改操作。
+> - 空间预分配。当SDS需要进行扩展时，Redis会为SDS分配好内存，并且根据特定的算法分配多余的free空间，避免了连续执行字符串添加带来的内存分配的消耗。
+> - 惰性释放。如果需要缩短字符串，不会立即回收多余的内存空间，而是用free记录剩余的空间，以备下次扩展时使用，避免了再次分配内存的消耗。
+> - 二进制安全。c语言在存储字符串时采用N+1的字符串数组，末尾使用'\0'标识字符串的结束，如果我们存储的字符串中间出现'\0'，那就会导致识别出错。而SDS因为记录了字符串的长度len，则没有这个问题。
+>
+>  字符串最大为512M
+
+#### Map底层原理
+
+> dictht是哈希表的定义：
+>
+> ```c
+> typedef struct dictht {
+> 
+>  // 哈希表节点指针数组（俗称桶，bucket）
+>  dictEntry **table;      
+> 
+>  // 指针数组的大小
+>  unsigned long size;     
+> 
+>  // 指针数组的长度掩码，用于计算索引值
+>  unsigned long sizemask; 
+> 
+>  // 哈希表现有的节点数量
+>  unsigned long used;     
+> 
+> } dictht;
+> ```
+>
+> table是一个数组，数组中的元素都是一个指向dictEntry结构的指针，每个**dictEntry**结构保存着一个键值对。
+>
+> dictEntry的结构如下：
+>
+> ```c
+> typedef struct dictEntry {
+> 
+>  // 键
+>  void *key;
+> 
+>  // 值
+>  union {
+>      void *val;
+>      uint64_t u64;
+>      int64_t s64;
+>  } v;
+> 
+>  // 链往后继节点
+>  struct dictEntry *next; 
+> 
+> } dictEntry;
+> ```
+>
+> 可以看到有个next指针，是用链表法来解决hash冲突的；v保存值，可以是一个指针，uint64_t整数，或者int64_t整数。
+>
+> Redis中字典的结构如下：
+>
+> ```c
+> typedef struct dict {
+> 
+>  // 特定于类型的处理函数
+>  dictType *type;
+> 
+>  // 类型处理函数的私有数据
+>  void *privdata;
+> 
+>  // 哈希表（2个）
+>  dictht ht[2];       
+> 
+>  // 记录 rehash 进度的标志，值为-1 表示 rehash 未进行
+>  int rehashidx;
+> 
+>  // 当前正在运作的安全迭代器数量
+>  int iterators;      
+> 
+> } dict;
+> ```
+>
+> ht[2]就是两个哈希表，一般情况下只会ht[0]，ht[1]会在对ht[0]进行rehash时使用。rehashidx记录了rehash目前的进度，如果目前没有进行rehash那么rehashidx=-1。
+>
+> #### 哈希算法以及解决哈希冲突
+>
+> redis使用MurmurHash2算法，哈希冲突使用链地址法，redis总是将新节点添加到链表头部。
+>
+> ### rehash和渐进式rehash
+>
+> redis的哈希表会随着对其操作而增大或减小，那么为了让负载因子保持合理，也保持字典的高效，需要在哈希表中数量太多或太少时进行扩展或收缩。
+>
+> redis最小哈希表大小为DICT_HT_INITIAL_SIZE=4，扩展操作的话ht[1]的大小为第一个大于等于ht[0].used*2的2^n；收缩操作ht[1]的大小为第一个大于等于ht[0].used的2^n。然后将ht[0]中的所有键值对rehash到ht[1]上，当全部rehash之后，把ht[1]置为ht[0]，并为ht[1]新创建一个空白哈希表，为下次rehash做准备。
+>
+> **渐进式rehash**，让字典同时持有ht[0]和ht[1]，将rehashidx设为0，表示rehash开始；在rehash期间，每次对字典进行增删查改操作时，redis除了执行指定的操作以外，还会顺带把ht[0]哈希表在rehashidx索引上的所有键值对rehash到ht[1]，当rehash完成，rehashidx++；随着时间及操作的执行，最终ht[0]的所有键值对会rehash到ht[1]上，然后把rehashidx置为-1；表示rehash结束。
+>
+> 在渐进式rehash的过程中，字典的删除，查找，更新等操作会在两个哈希表上进行，新增的键值对会保存到ht[1]里面，这样保证了ht[0]里的键值对只增不减，最终变为空表。
+>
+> Redis的字典底层使用哈希表实现，每个字典通常有两个哈希表，一个平时使用，另一个用于rehash时使用，使用链地址法解决哈希冲突。
+
+### 列表
+
+> 通过链表
+>
+> 
+> 
+>  ```C
+>  typedef  struct listNode{
+>         //前置节点
+>         struct listNode *prev;
+>         //后置节点
+>         struct listNode *next;
+>         //节点的值
+>         void *value;  
+>  } listNode
+> ```
+
+### 集合
+
+> 散列表
+>
+> 
+
+### 有序集合
+
+> 散列表和跳跃表
+>
+> 有序集合对象的编码可以是`ziplist散列表`或者`skiplist跳跃表`。同时满足以下条件时使用ziplist编码：
+>
+> - 元素数量小于128个
+> - 所有member的长度都小于64字节
+>
+> 不能满足上面两个条件的使用 skiplist 编码
+>
+> 跳跃表，查找元素时，跳表能够提供O(logN)
+>
+> - 当数据较少时，sorted set是由一个ziplist来实现的。
+> - 当数据多的时候，sorted set是由一个dict + 一个skiplist来实现的。简单来讲，dict用来查询数据到分数的对应关系，而skiplist用来根据分数查询数据（可能是范围查找）。
+>
+> [redis zset底层实现原理](https://www.cnblogs.com/yuanfang0903/p/12165394.html)
+>
+> **总结起来，Redis中的skiplist跟前面介绍的经典的skiplist相比，有如下不同：**
+>
+> - 分数(score)允许重复，即skiplist的key允许重复。这在最开始介绍的经典skiplist中是不允许的。
+>
+> - 在比较时，不仅比较分数（相当于skiplist的key），还比较数据本身。在Redis的skiplist实现中，数据本身的内容唯一标识这份数据，而不是由key来唯一标识。另外，当多个元素分数相同的时候，还需要根据数据内容来进字典排序。
+>
+> - 第1层链表不是一个单向链表，而是一个双向链表。这是为了方便以倒序方式获取一个范围内的元素。
+>
+> - 在skiplist中可以很方便地计算出每个元素的排名(rank)。
+>
+>   
+>
+> 通常链表时按照一个节点中存储指向下个节点的指针，每次只能指向一个数据
+>
+> 但是跳跃表，在一个节点中可以有多层，能够同时指向后面多个节点。
+>
+> 在链表的基础上增加了跳跃功能，正是这个跳跃的功能，使得在查找元素时，跳表能够提供O(logN)的时间复杂度
+>
+> skiplist中元素有序排列
+>
+> skiplist，指的就是除了最下面第1层链表之外，它会产生若干层稀疏的链表，这些链表里面的指针故意跳过了一些节点（而且越高层的链表跳过的节点越多）。这就使得我们在查找数据的时候能够先在高层的链表中进行查找，然后逐层降低，最终降到第1层链表来精确地确定数据位置。在这个过程中，我们跳过了一些节点，从而也就加快了查找速度。
+
+[redis的底层数据结构](https://www.cnblogs.com/ysocean/p/9080942.html)
 
 ## 四 redis核心原理
 
