@@ -241,7 +241,7 @@ class文件
 
 初始化，执行BeanPostProcessor（前置，后置处理器）
 
-将对象放入单例池（singleObjects， beanNmae：bean对象）
+将对象放入单例池（singleObjects， beanNnae：bean对象）
 
 
 
