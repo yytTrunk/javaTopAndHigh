@@ -280,6 +280,12 @@ HashMap中键值均可以为null值。
 - Hashtable（对数据操作的时候都会通过Synchronized进行同步）
 - ConcurrentHashMap
 
+
+
+#### 1.15 HashMap的resize过程？
+
+
+
 ##### 1.15 总结
 
 HashMap是在时间和空间利用上进行平衡优化。

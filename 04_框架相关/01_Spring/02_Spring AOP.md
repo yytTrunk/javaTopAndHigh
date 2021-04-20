@@ -118,6 +118,8 @@ JDK代理和CGLib代理都是在运行时期织入，都是在对象初始化时
 
 
 
+Spring AOP如果代理的类存在接口，优先使用JDK动态代理，否则使用CGLIB动态代理。
+
 ### 1.5 Spring AOP 与AspectJ的关系？
 
 AOP只是一种概念，Spring AOP和AspectJ AOP均是AOP的实现。
