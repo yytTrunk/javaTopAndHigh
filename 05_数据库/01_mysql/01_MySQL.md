@@ -327,6 +327,7 @@ select * from db where id1=1 and 函数(id2)=2
 
 id1会使用索引，但是函数不会使用索引
 
+[联合索引存储方式和最左匹配](https://www.cnblogs.com/xuwc/p/14007766.html)
 
 
 ### 1.14 事务包含哪几个特性？
