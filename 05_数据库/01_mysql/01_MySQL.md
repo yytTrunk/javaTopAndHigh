@@ -597,7 +597,7 @@ MVCC只在可重复读和不可重复读两个隔离级别中使用，通过该�
 
   雪花算法，分布式ID，结构
 
-  ![640?wx_fmt=png](https://ss.csdn.net/p?https://mmbiz.qpic.cn/mmbiz_png/NtO5sialJZGovUVwFkfA0yRdCYoer9mqxdkKsBd5aD96r6ygicrXlKjwmsIBCZpF4rrkUM7FR1U1zZdL4yjEF1Fw/640?wx_fmt=png)
+  ![640?wx_fmt=png](https://p0.meituan.net/travelcube/96034f8fa0f2cb14c21844a4fa12f50441574.png)
 
   SnowFlake所生成的ID一共分成四部分：
 
@@ -663,6 +663,9 @@ MySQL里存在binlog日志，每个增删改查的操作，会改变数据的操
 
 因此，会出现从库数据会比主库要慢，出现主从同步延迟。通常主库写数据达到1000/s，从库延时可能又几ms，并发写达到2000/s，延时可能会有几十ms。如果大于4000/s，6000/s，8000/s，会有几秒。
 
+
+![MySQL主从复制](https://camo.githubusercontent.com/c26e367a6ffcce8ae6ecb39476a01bef14af6572124a6df050c4dc0c7f1074f3/687474703a2f2f646c2e69746579652e636f6d2f75706c6f61642f6174746163686d656e742f303038302f333038362f34363863316131342d653761642d333239302d396433642d3434616335303161373232372e6a7067)
+
 #### 主从复制数据丢失问题？半同步复制、并行复制原理
 
 假如主库突然挂了，导致主库数据未完全同步到从库中。
@@ -670,8 +673,6 @@ MySQL里存在binlog日志，每个增删改查的操作，会改变数据的操
 可以采用semi-sync半同步复制，指主库写入binlog日志之后，会强制将数据同步到从库，从库将日志写入到本地的relaylog之后，接着返回一个ack给主库，主库收到至少一个库的ack之后，才会认为写操作完成。
 
 并行复制，从数据库，会开启多个SQL线程，从relaylog里读一个库的日志，进行重放，缓解主从并发。
-
-
 
 通常在读远远多于写的情况下，多考虑使用主从复制。
 
