@@ -687,6 +687,9 @@ MySQL里存在binlog日志，每个增删改查的操作，会改变数据的操
 3. 写代码时，避免插入更新数据后，立马就进行查询的操作
 4. 如果必须要读，可以强制从主库里读取。（不太建议，有点违背读写分离）
 
+### 3.7 MySQL主备复制，同步至ES、Kafka常用开源工具？
+[canal](https://github.com/alibaba/canal)
+[yugong](https://github.com/alibaba/yugong)
 
 
 ## 四 调优
