@@ -222,7 +222,7 @@ kafka重复消费的根本原因是数据消费了，但是offset没更新，导
 ## 参考
 
 - [kafka官网](http://kafka.apachecn.org/)
-
+- [深入浅出理解基于 Kafka 和 ZooKeeper 的分布式消息队列](https://gitbook.cn/books/5ae1e77197c22f130e67ec4e/index.html)
 
 
 
