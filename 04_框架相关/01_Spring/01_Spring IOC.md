@@ -303,7 +303,13 @@ byType：查找所有的set方法，将符合参数类型的bean注入
     private Animal animal;
 ```
 
-需要在xml文件中开启
+@Autowired 和 @Resource 区别  
+共同点  
+@Resource和@Autowired都可以作为注入属性的修饰，在接口仅有单一实现类时，两个注解的修饰效果相同，可以互相替换，不影响使用。  
+不同点  
+1、@Resource是JDK原生的注解，@Autowired是Spring2.5 引入的注解  
+2、@Resource有两个属性name和type。Spring将@Resource注解的name属性解析为bean的名字，而type属性则解析为bean的类型。所以如果使用name属性，则使用byName的自动注入策略，而使用type属性时则使用byType自动注入策略。如果既不指定name也不指定type属性，这时将通过反射机制使用byName自动注入策略。 @Autowired只根据type进行注入，不会去匹配name。如果涉及到type无法辨别注入对象时，那需要依赖@Qualifier或@Primary注解一起来修饰。  
+
 
 ### 1.8 Bean是如何被构建的？
 
