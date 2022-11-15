@@ -443,5 +443,6 @@ ApplicationContext扩展了如下功能
 2. 尽量不要在`@Controller/@Service` 等容器中定义静态变量，不论是单例(singleton)还是多实例(prototype)他都是线程不安全的。
 3. 默认注入的Bean对象，在不设置`scope`的时候他也是线程不安全的。
 4. 一定要定义变量的话，用`ThreadLocal`来封装，这个是线程安全的。
+5. 
 
 
