@@ -309,6 +309,9 @@ class Singleton {
 
 ![](https://gitee.com/codeyyt/my_pic/raw/master/image-blog/javath/03/03_04.PNG)
 
+<img width="685" alt="image" src="https://github.com/yytTrunk/javaTopAndHigh/assets/25190447/c0088660-ee7a-487d-9800-a63c4f40964a">
+
+
 **例外**
 
 Java规范中规定对变量的写操作都是原子的。
